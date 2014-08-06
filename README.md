@@ -1,0 +1,4 @@
+avocadorm
+=========
+
+Lightweight ORM.
