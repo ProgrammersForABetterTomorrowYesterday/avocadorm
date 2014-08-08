@@ -1,0 +1,14 @@
+name: magnetfruit_avocadorm
+version: '0.1.0'
+description: 'Lightweigtht ORM, connecting entities and database in a CRUD manner.'
+author: Zyrthofar <zyrthofar@magnetfruit.com>
+homepage: 'www.magnetfruit.com/avocadorm/'
+dependencies:
+  magnetfruit_entity: any
+  sqljocky: 0.11.0
+dev_dependencies:
+  unittest: any
+  mock: any
+dependency_overrides:
+  magnetfruit_entity:
+    path: ../entity/
