@@ -65,7 +65,7 @@ class Resource {
   }
 
   static Property _convertPrimaryKeyColumnToProperty(String name, Type type, Column column) {
-    if (field.name == null || field.name.isEmpty) {
+    if (column.name == null || column.name.isEmpty) {
       throw new ResourceException('Entity \'${type}\' has primary key column \'${name}\' that has an invalid name.');
     }
 

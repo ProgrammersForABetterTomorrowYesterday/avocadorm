@@ -8,9 +8,9 @@ class ForeignKeyProperty extends Property {
   final int onUpdateOperation;
   final int onDeleteOperation;
 
-  ApiForeignKeyProperty.ManyToOne(String name, Type type, this.targetName, this.onUpdateOperation, this.onDeleteOperation)
+  ForeignKeyProperty.ManyToOne(String name, Type type, this.targetName, this.onUpdateOperation, this.onDeleteOperation)
     : super(name, type, null), isManyToOne = true;
 
-  ApiForeignKeyProperty.OneToMany(String name, Type type, this.targetName, this.onUpdateOperation, this.onDeleteOperation)
+  ForeignKeyProperty.OneToMany(String name, Type type, this.targetName, this.onUpdateOperation, this.onDeleteOperation)
     : super(name, type, null), isOneToMany = true;
 }

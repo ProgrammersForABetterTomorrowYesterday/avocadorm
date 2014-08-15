@@ -2,7 +2,7 @@ part of avocadorm_test;
 
 class MockDatabaseHandler extends Mock implements DatabaseHandler {
 
-  Future<List<Map>> retrieveAll(String table, List<String> columns) {
+  Future<List<Map>> retrieveAll(String table, List<String> columns, [List<PropertyFilter> filters]) {
     var entities = _entityRepository[table];
 
     return new Future.value(entities);
@@ -20,8 +20,8 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
 
     entities.removeWhere((e) => e[pkColumn] == data[pkColumn]);
 
-    if (data[pkColumn] == null) {
-      data[pkColumn] = entities.reduce(max) + 1;
+    if (!data.containsKey(pkColumn) || data[pkColumn] == null) {
+      data[pkColumn] = entities.map((e) => e[pkColumn]).reduce(max) + 1;
     }
 
     entities.add(data);
@@ -42,26 +42,26 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
 Map<Type, List<Map>> _entityRepository = new Map<Type, List<Map>>();
 
 void setEntities() {
-  _entityRepository[EntityA] = [
-      { 'entityAId': 1, 'name': 'First EntityA', 'entityBId': 1 },
-      { 'entityAId': 2, 'name': 'Second EntityA', 'entityBId': 2 },
-      { 'entityAId': 3, 'name': 'Third EntityA', 'entityBId': null },
-      { 'entityAId': 4, 'name': 'Fourth EntityA', 'entityBId': 3 },
-      { 'entityAId': 5, 'name': 'Fifth EntityA', 'entityBId': 2 }
+  _entityRepository['entity_a'] = [
+      { 'entity_a_id': 1, 'name': 'First EntityA', 'entity_b_id': 1 },
+      { 'entity_a_id': 2, 'name': 'Second EntityA', 'entity_b_id': 2 },
+      { 'entity_a_id': 3, 'name': 'Third EntityA', 'entity_b_id': null },
+      { 'entity_a_id': 4, 'name': 'Fourth EntityA', 'entity_b_id': 3 },
+      { 'entity_a_id': 5, 'name': 'Fifth EntityA', 'entity_b_id': 2 }
   ];
 
-  _entityRepository[EntityB] = [
-      { 'entityBId': 1, 'name': 'First EntityB', 'entityCId': 2 },
-      { 'entityBId': 2, 'name': 'Second EntityB', 'entityCId': 1 },
-      { 'entityBId': 3, 'name': 'Third EntityB', 'entityCId': 3 },
-      { 'entityBId': 4, 'name': 'Fourth EntityB', 'entityCId': 1 },
-      { 'entityBId': 5, 'name': 'Fifth EntityB', 'entityCId': null },
-      { 'entityBId': 6, 'name': 'Sixth EntityB', 'entityCId': 1 },
+  _entityRepository['entity_b'] = [
+      { 'entity_b_id': 1, 'name': 'First EntityB', 'entity_c_id': 2 },
+      { 'entity_b_id': 2, 'name': 'Second EntityB', 'entity_c_id': 1 },
+      { 'entity_b_id': 3, 'name': 'Third EntityB', 'entity_c_id': 3 },
+      { 'entity_b_id': 4, 'name': 'Fourth EntityB', 'entity_c_id': 1 },
+      { 'entity_b_id': 5, 'name': 'Fifth EntityB', 'entity_c_id': null },
+      { 'entity_b_id': 6, 'name': 'Sixth EntityB', 'entity_c_id': 1 },
   ];
 
-  _entityRepository[EntityC] = [
-      { 'entityCId': 1, 'name': 'First EntityC' },
-      { 'entityCId': 2, 'name': 'Second EntityC' },
-      { 'entityCId': 3, 'name': 'Third EntityC' }
+  _entityRepository['entity_c'] = [
+      { 'entity_c_id': 1, 'name': 'First EntityC' },
+      { 'entity_c_id': 2, 'name': 'Second EntityC' },
+      { 'entity_c_id': 3, 'name': 'Third EntityC' }
   ];
 }

@@ -15,6 +15,9 @@ class Employee extends Entity {
   @Column('company_id')
   int companyId;
 
+  @Column('email')
+  String email;
+
   @Column.ManyToOneForeignKey('companyId')
   Company company;
 

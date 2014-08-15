@@ -10,14 +10,20 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     this.pool = new ConnectionPool(host: host, port: port, db: database, user: user, password: password);
   }
 
-  Future<List<Map>> retrieveAll(String table, List<String> columns) {
+  Future<List<Map>> retrieveAll(String table, List<String> columns, [List<PropertyFilter> propertyFilters]) {
     var cols = columns.map((c) => '`${c}`');
 
     var script = 'SELECT ${cols.join(', ')} FROM `${table}`;';
 
+    if (propertyFilters != null) {
+      var filters = propertyFilters.map((f) => '`${f.property.columnName}` = ${this._objToString(f.value)}');
+
+      script += '\nWHERE ${filters.join(' AND ')}';
+    }
+
     return this.pool.query(script).then((results) {
       return results.toList().then((rows) {
-        return rows.length > 0 ? rows.toList() : [];
+        return rows.map((r) => _constructMapFromDatabase(r, results.fields)).toList();
       });
     });
   }
@@ -64,6 +70,17 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     return this.pool.query(script).then((result) {
       return new Future.value(null);
     });
+  }
+
+  Map _constructMapFromDatabase(Row input, List<Field> fields) {
+    var output = new Map<String, Object>();
+
+    InstanceMirror instanceMirror = reflect(input);
+    fields.forEach((field) {
+      output[field.name] = instanceMirror.getField(new Symbol(field.name)).reflectee;
+    });
+
+    return output;
   }
 
   String _objToString(Object value) {
