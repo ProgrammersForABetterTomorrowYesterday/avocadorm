@@ -10,16 +10,28 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     this.pool = new ConnectionPool(host: host, port: port, db: database, user: user, password: password);
   }
 
-  Future<List<Map>> retrieveAll(String table, List<String> columns, [List<PropertyFilter> propertyFilters]) {
+  Future<Object> create(String table, String pkColumn, List<String> columns, Map data) {
+    var cols = columns.map((c) => '`${c}`'),
+        values = columns.map((c) => _objToString(data[c]));
+
+    var script = 'INSERT INTO `${table}` (${cols.join(', ')})';
+    script += '\nVALUES (${values.join(', ')});';
+
+    return this.pool.query(script).then((result) {
+      return new Future.value(result.insertId);
+    });
+  }
+
+  Future<List<Map>> read(String table, List<String> columns, [List<Filter> filters]) {
     var cols = columns.map((c) => '`${c}`');
 
-    var script = 'SELECT ${cols.join(', ')} FROM `${table}`;';
+    var script = 'SELECT ${cols.join(', ')} FROM `${table}`';
 
-    if (propertyFilters != null) {
-      var filters = propertyFilters.map((f) => '`${f.property.columnName}` = ${this._objToString(f.value)}');
-
-      script += '\nWHERE ${filters.join(' AND ')}';
+    if (filters != null && filters.length > 0) {
+      script += '\nWHERE ${_constructFilter(filters)}';
     }
+
+    script += ';';
 
     return this.pool.query(script).then((results) {
       return results.toList().then((rows) {
@@ -28,44 +40,28 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     });
   }
 
-  Future<Map> retrieveById(String table, List<String> columns, String pkColumn, Object pkValue) {
-    var cols = columns.map((c) => '`${c}`');
-    var value = this._objToString(pkValue);
+  Future<Object> update(String table, String pkColumn, List<String> columns, Map data) {
+    columns.insert(0, pkColumn);
 
-    var script = 'SELECT ${cols.join(', ')} FROM `${table}`';
-    script += '\nWHERE `${pkColumn}` = ${value};';
-
-    return this.pool.query(script).then((results) {
-      return results.toList().then((rows) {
-        return rows;
-      });
-    });
-  }
-
-  Future<Object> save(String table, List<String> columns, String pkColumn, Map data) {
-    var cols = columns.map((c) => '`${c}`').toList().add('`${pkColumn}`');
-    var values = data.values.map((v) =>  this._objToString(v));
+    var cols = columns.map((c) => '`${c}`'),
+        values = columns.map((c) =>  _objToString(data[c]));
 
     var script = 'INSERT INTO `${table}` (${cols.join(', ')})';
     script += '\nVALUES (${values.join(', ')})';
-
-    if (data[pkColumn] != null) {
-      script += '\nON DUPLICATE KEY UPDATE';
-      script += '\n${cols.map((c) => '`${c}` = VALUES(`${c}`)').join(', ')}';
-    }
-
-    script += ';';
+    script += '\nON DUPLICATE KEY UPDATE';
+    script += '\n${cols.map((c) => '${c} = VALUES(${c})').join(', ')};';
 
     return this.pool.query(script).then((result) {
       return new Future.value(result.insertId);
     });
   }
 
-  Future delete(String table, String pkColumn, Object pkValue) {
-    var value = this._objToString(pkValue);
-
+  Future delete(String table, [List<Filter> filters]) {
     var script = 'DELETE FROM `${table}`';
-    script += '\nWHERE `${pkColumn}` = ${value}';
+
+    if (filters != null && filters.length > 0) {
+      script += '\nWHERE ${_constructFilter(filters)}';
+    }
 
     return this.pool.query(script).then((result) {
       return new Future.value(null);
@@ -83,7 +79,7 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     return output;
   }
 
-  String _objToString(Object value) {
+  static String _objToString(Object value) {
     if (value is String) {
       return '\'${value}\'';
     }
@@ -93,5 +89,9 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     }
 
     return value.toString();
+  }
+
+  static String _constructFilter(List<Filter> filters) {
+    return filters.map((f) => '`${f.column}` = ${_objToString(f.value)}').join(' AND ');
   }
 }

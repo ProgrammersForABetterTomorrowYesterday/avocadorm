@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:magnetfruit_avocadorm/avocadorm.dart';
 import 'package:magnetfruit_avocadorm/database_handler/mysql_database_handler.dart';
 import 'entities/entities.dart';
@@ -12,5 +13,18 @@ void main() {
   var avocadorm = new Avocadorm(databaseHandler)
     ..addEntitiesInLibrary('entities');
 
-  avocadorm.retrieveAll(Company).then((companies) => print(companies));
+  avocadorm.readById(Employee, 2).then((employee) {
+    print(JSON.encode(employee));
+
+    employee.name = 'Christina Johnson';
+
+    avocadorm.update(employee).then((id) {
+
+      avocadorm.readById(Employee, 2).then((employee) {
+        print(JSON.encode(employee));
+      });
+
+    });
+  });
 }
+   

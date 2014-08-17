@@ -1,6 +1,6 @@
 part of entities;
 
-@Table('entity_b', allowHttpMethods: HttpMethod.ALL)
+@Table('entity_b', allowHttpMethods: HttpMethod.GET | HttpMethod.HEAD)
 class EntityB extends Entity {
 
   @Column.PrimaryKey('entity_b_id')
@@ -9,10 +9,7 @@ class EntityB extends Entity {
   @Column('name')
   String name;
 
-  @Column('entity_c_id')
-  int entityCId;
-
-  @Column.ManyToOneForeignKey('entityCId')
-  EntityC entityC;
+  @Column.OneToManyForeignKey('entityBId')
+  List<EntityA> entityAs;
 
 }

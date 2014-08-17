@@ -2,12 +2,12 @@ part of magnetfruit_avocadorm;
 
 abstract class DatabaseHandler {
 
-  Future<List<Map>> retrieveAll(String table, List<String> columns, [List<PropertyFilter> filters]);
+  Future<Object> create(String table, String pkColumn, List<String> columns, Map data);
 
-  Future<Map> retrieveById(String table, List<String> columns, String pkColumn, Object pkValue);
+  Future<List<Map>> read(String table, List<String> columns, [List<Filter> filters]);
 
-  Future<Object> save(String table, List<String> columns, String pkColumn, Map data);
+  Future<Object> update(String table, String pkColumn, List<String> columns, Map data);
 
-  Future delete(String table, String pkColumn, Object pkValue);
+  Future delete(String table, [List<Filter> filters]);
 
 }

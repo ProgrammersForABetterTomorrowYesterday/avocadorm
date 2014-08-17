@@ -1,14 +1,15 @@
 library magnetfruit_avocadorm;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:mirrors';
 import 'package:magnetfruit_entity/entity.dart';
 
 part 'database_handler/database_handler.dart';
+part 'database_handler/filter.dart';
 part 'property/foreign_key_property.dart';
 part 'property/primary_key_property.dart';
 part 'property/property.dart';
-part 'property/property_filter.dart';
 part 'resource_handler/resource.dart';
 part 'resource_handler/resource_exception.dart';
 
@@ -66,65 +67,162 @@ class Avocadorm {
   }
 
 
-  Future<List<Entity>> retrieveAll(Type entityType, {List<PropertyFilter> filters, List<String> loadForeignKeys}) {
-    var resource = this._getResource(entityType);
-
-    if (resource == null) {
-      throw new ResourceException('Resource not found for entity ${entityType}.');
+  Future<Object> create(Entity entity) {
+    if (entity == null) {
+      throw new ArgumentError('Argument \'entity\' must not be null.');
     }
 
-    var columns = resource.simpleAndPrimaryKeyProperties.map((p) => p.columnName);
+    if (entity is! Entity) {
+      throw new ArgumentError('Argument \'entity\' should be an Entity.');
+    }
 
-    return this._databaseHandler.retrieveAll(resource.tableName, columns, filters)
-      .then((entities) => entities.map((e) => convertToEntity(e, resource)))
-      .then((entities) => Future.wait(entities.map((e) => _retrieveForeignKeys(e, loadForeignKeys))));
+    var entityType = entity.runtimeType,
+        data = this._convertFromEntity(entity);
+
+    return this._create(entityType, data);
   }
 
-  Future<Entity> retrieveById(Type entityType, Object primaryKeyValue, {List<String> loadForeignKeys}) {
+  Future<Object> createFromMap(Type entityType, Map entityMap) {
+    if (entityType == null) {
+      throw new ArgumentError('Argument \'entityType\' must not be null.');
+    }
+
+    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
+      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
+    }
+
+    if (entityMap == null) {
+      throw new ArgumentError('Argument \'entityMap\' must not be null.');
+    }
+
+    if (entityMap is! Map) {
+      throw new ArgumentError('Argument \'entityMap\' should be a Map.');
+    }
+
+    var resource = this._getResource(entityType),
+        data = this._convertFromEntityMap(entityMap, resource);
+
+    return this._create(entityType, data);
+  }
+
+  Future<List<Entity>> readAll(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
+    return this._read(entityType, filters: filters, foreignKeys: foreignKeys);
+  }
+
+  Future<Entity> readById(Type entityType, Object primaryKeyValue, {List<String> foreignKeys}) {
     if (primaryKeyValue == null) {
       return new Future.value(null);
     }
 
     var resource = this._getResource(entityType),
-        columns = resource.simpleAndPrimaryKeyProperties.map((p) => p.columnName),
-        pkColumn = resource.primaryKeyProperty.columnName;
+        pkColumn = resource.primaryKeyProperty.columnName,
+        filters = [new Filter(pkColumn, primaryKeyValue)];
 
-    return this._databaseHandler.retrieveById(resource.tableName, columns, pkColumn, primaryKeyValue)
-      .then((entity) => convertToEntity(entity, resource))
-      .then((entity) => _retrieveForeignKeys(entity, loadForeignKeys));
+    return this._read(entityType, filters: filters, foreignKeys: foreignKeys)
+      .then((entities) => entities.length > 0 ? entities.first : null);
   }
 
-  Future<Object> save(Type entityType, Map data) {
-    var resource = this._getResource(entityType),
-        columns = resource.simpleAndPrimaryKeyProperties.map((p) => p.columnName),
-        pkColumn = resource.primaryKeyProperty.columnName;
+  Future<Object> update(Entity entity) {
+    var entityType = entity.runtimeType,
+        dbMap = this._convertFromEntity(entity);
 
-    return this._databaseHandler.save(resource.tableName, columns, pkColumn, data)
+    return this._update(entityType, dbMap);
+  }
+
+  Future<Object> updateFromMap(Type entityType, Map data) {
+    var resource = this._getResource(entityType),
+        dbMap = this._convertFromEntityMap(data, resource);
+
+    return this._update(entityType, dbMap);
+  }
+
+  Future<Object> save(Entity entity) {
+    var entityType = entity.runtimeType,
+        dbMap = this._convertFromEntity(entity);
+
+    return this._update(entityType, dbMap);
+  }
+
+  Future<Object> saveFromMap(Type entityType, Map data) {
+    var resource = this._getResource(entityType),
+        dbMap = this._convertFromEntityMap(data, resource);
+
+    return this._update(entityType, dbMap);
+  }
+
+  Future delete(Entity entity) {
+    var entityType = entity.runtimeType,
+        resource = this._getResource(entityType),
+        pkColumn = resource.primaryKeyProperty.columnName,
+        pkValue = reflect(entity).getField(new Symbol(pkColumn));
+
+    return this._delete(entityType, pkValue);
+  }
+
+  Future deleteById(Type entityType, Object pkValue) {
+    return this._delete(entityType, pkValue);
+  }
+
+
+  Future<Object> _create(Type entityType, Map data) {
+    var resource = this._getResource(entityType),
+        pkColumn = resource.primaryKeyProperty.columnName,
+        columns = resource.simpleProperties.map((p) => p.columnName).toList();
+
+    return this._databaseHandler.create(resource.tableName, pkColumn, columns, data)
       .then((pkValue) {
         this._saveForeignKeys(entityType, data);
         return pkValue;
       });
   }
 
-  Future delete(Type entityType, Object primaryKeyValue) {
+  Future<List<Entity>> _read(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
     var resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName;
+        columns = resource.simpleAndPrimaryKeyProperties.map((p) => p.columnName).toList();
 
-    return this._databaseHandler.delete(resource.tableName, pkColumn, primaryKeyValue);
+    return this._databaseHandler.read(resource.tableName, columns, filters)
+      .then((entities) => entities.map((e) => this._convertToEntity(e, resource)))
+      .then((entities) => Future.wait(entities.map((e) => _retrieveForeignKeys(e, foreignKeys))));
+  }
+
+  Future<Object> _update(Type entityType, Map data) {
+    var resource = this._getResource(entityType),
+        pkColumn = resource.primaryKeyProperty.columnName,
+        columns = resource.simpleProperties.map((p) => p.columnName).toList();
+
+    return this._databaseHandler.update(resource.tableName, pkColumn, columns, data)
+      .then((pkValue) {
+        this._saveForeignKeys(entityType, data);
+        return pkValue;
+      });
+  }
+
+  Future _delete(Type entityType, Object pkValue) {
+    var resource = this._getResource(entityType),
+        pkColumn = resource.primaryKeyProperty.columnName,
+        filters = [new Filter(pkColumn, pkValue)];
+
+    return this._databaseHandler.delete(resource.tableName, filters);
   }
 
 
   Resource _getResource(Type entityType) {
-    return this._resources.firstWhere((r) => r.type == entityType, orElse: null);
+    var resource = this._resources.firstWhere((r) => r.type == entityType, orElse: null);
+
+    if (resource == null) {
+      throw new ResourceException('Resource not found for entity ${entityType}.');
+    }
+
+    return resource;
   }
 
-  Future<Entity> _retrieveForeignKeys(Entity entity, List<String> loadForeignKeys) {
+  Future<Entity> _retrieveForeignKeys(Entity entity, List<String> foreignKeys) {
     if (entity == null) {
       return new Future.value(null);
     }
 
-    if (loadForeignKeys == null) {
-      loadForeignKeys = [];
+    if (foreignKeys == null) {
+      foreignKeys = [];
     }
 
     Resource resource = this._getResource(entity.runtimeType);
@@ -133,27 +231,27 @@ class Avocadorm {
     InstanceMirror entityMirror = reflect(entity);
 
     resource.foreignKeyProperties
-      .where((p) => loadForeignKeys.any((fk) => fk == p.name || fk.startsWith('${p.name}.')))
+      .where((p) => foreignKeys.any((fk) => fk == p.name || fk.startsWith('${p.name}.')))
       .forEach((p) {
         var future = null;
 
         if (p.isManyToOne) {
           var id = entityMirror.getField(new Symbol(p.targetName)).reflectee;
 
-          future = this.retrieveById(
+          future = this.readById(
               p.type,
               id,
-              loadForeignKeys: traverseLoadForeignKeyList(loadForeignKeys, p.name));
+              foreignKeys: traverseForeignKeyList(foreignKeys, p.name));
         }
         else if (p.isOneToMany) {
-          var targetResource = this._resources[p.type];
+          var targetResource = this._getResource(p.type);
           var targetProperty = targetResource.simpleProperties.firstWhere((tp) => tp.name == p.targetName);
           var targetValue = entityMirror.getField(new Symbol(resource.primaryKeyProperty.name)).reflectee;
 
-          future = this.retrieveAll(
+          future = this.readAll(
               p.type,
-              filters: [new PropertyFilter(targetProperty, targetValue)],
-              loadForeignKeys: traverseLoadForeignKeyList(loadForeignKeys, p.name));
+              filters: [new Filter(targetProperty, targetValue)],
+              foreignKeys: traverseForeignKeyList(foreignKeys, p.name));
         }
 
         if (future != null) {
@@ -177,12 +275,12 @@ class Avocadorm {
   }
 
 
-  static Entity convertToEntity(Map data, Resource resource) {
+  Entity _convertToEntity(Map data, Resource resource) {
     if (data == null) {
       return null;
     }
 
-    InstanceMirror entityMirror = reflectClass(resource.type).newInstance(new Symbol(''), []);
+    var entityMirror = reflectClass(resource.type).newInstance(new Symbol(''), []);
 
     resource.simpleAndPrimaryKeyProperties.forEach((p) {
       entityMirror.setField(new Symbol(p.name), data[p.columnName]);
@@ -191,14 +289,44 @@ class Avocadorm {
     return entityMirror.reflectee;
   }
 
-  static List<String> traverseLoadForeignKeyList(List<String> loadForeignKeys, String propertyName) {
-    var traversedLoadForeignKeys = loadForeignKeys
+  Map _convertFromEntity(Entity entity) {
+    if (entity == null) {
+      return null;
+    }
+
+    var resource = _getResource(entity.runtimeType),
+        map = new Map(),
+        entityMirror = reflect(entity);
+
+    resource.simpleAndPrimaryKeyProperties.forEach((p) {
+      map[p.columnName] = entityMirror.getField(new Symbol(p.name)).reflectee;
+    });
+
+    return map;
+  }
+
+  Map _convertFromEntityMap(Map data, Resource resource) {
+    if (data == null) {
+      return null;
+    }
+
+    var map = new Map();
+
+    resource.simpleAndPrimaryKeyProperties.forEach((p) {
+      map[p.columnName] = data[p.name];
+    });
+
+    return map;
+  }
+
+  static List<String> traverseForeignKeyList(List<String> foreignKeys, String propertyName) {
+    var traversedForeignKeys = foreignKeys
       .where((fk) => fk == propertyName || fk.startsWith('${propertyName}.'))
       .map((fk) => fk.substring(propertyName.length))
       .where((fk) => fk.isNotEmpty)
       .map((fk) => trimLeft(fk, '.'));
 
-    return distinct(traversedLoadForeignKeys);
+    return distinct(traversedForeignKeys);
   }
 
   static String trimLeft(String input, String trimChar) {

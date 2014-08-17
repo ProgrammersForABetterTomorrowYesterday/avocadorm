@@ -1,95 +1,363 @@
 library avocadorm_test;
 
+import 'dart:async';
+import 'dart:math';
 import 'package:magnetfruit_avocadorm/avocadorm.dart';
 import 'package:mock/mock.dart';
 import 'package:unittest/unittest.dart';
-import 'dart:async';
-import 'dart:math';
 import 'entities/entities.dart';
 
 part 'mock_database_handler.dart';
 
 void main() {
 
-  setEntities();
+  group('Constructing the avocadorm', () {
 
-  test('instance is created', () {
-
-    expect(
-      new Avocadorm(new MockDatabaseHandler()),
-      isNotNull,
-      reason: 'Avocadorm should return a valid instance.');
-
-  });
-
-  var avocadorm;
-
-  setUp(() {
-    avocadorm = new Avocadorm(new MockDatabaseHandler());
-    avocadorm.addEntities([EntityA, EntityB, EntityC]);
-  });
-
-  test('Retrieving all entities', () {
-
-    avocadorm.retrieveAll(EntityA).then(expectAsync((entities) {
+    test('instance is created', () {
 
       expect(
-        entities.length,
-        equals(5),
-        reason: 'There should be 5 instances of type EntityA.');
-
-    }));
-
-  });
-
-  test('Retrieving an entity by id', () {
-
-    avocadorm.retrieveById(EntityA, 2).then(expectAsync((entity) {
-
-      expect(
-          entity,
+          new Avocadorm(new MockDatabaseHandler()),
           isNotNull,
-          reason: 'retrieveById() should return an instance of type EntityA.');
+          reason: 'Avocadorm should return a valid instance.');
 
-    }));
+    });
 
   });
 
-  test('Creating an entity (auto_increment id)', () {
+  group('Creating entities', () {
 
-    var newEntity = { 'name': 'New Entity!', 'entity_b_id': null };
+    var avocadorm;
 
-    avocadorm.save(EntityA, newEntity).then(expectAsync((id) {
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm(new MockDatabaseHandler());
+
+      avocadorm.addEntities([EntityA, EntityB]);
+    });
+
+    test('Normal creation with an entity', () {
+
+      var newId = 12,
+          newName = 'New Entity!',
+          newEntity = new EntityA()
+            ..entityAId = newId
+            ..name = newName
+            ..entityBId = null;
+
+      avocadorm.create(newEntity).then(expectAsync((id) {
+
+        expect(
+            id,
+            isNot(equals(newId)),
+            reason: 'The create() method should ignore any specified entity id.');
+
+        expect(
+            id,
+            equals(6),
+            reason: 'The create() method should return the new entity\'s id.');
+
+        avocadorm.readById(EntityA, id).then(expectAsync((entityA) {
+
+          expect(
+              entityA,
+              isNotNull,
+              reason: 'Created entity should be retrievable, but was not found.');
+
+          expect(
+              entityA.name,
+              equals(newName),
+              reason: 'Created entity should have the name that was given.');
+
+        }));
+
+      }));
+
+    });
+
+    test('Normal creation with an entity map', () {
+
+      var newId = 12,
+          newName = 'New Entity!',
+          newEntityMap = { 'entityAId': newId, 'name': newName, 'entityBId': null };
+
+      avocadorm.createFromMap(EntityA, newEntityMap).then(expectAsync((id) {
+
+        expect(
+            id,
+            isNot(equals(newId)),
+            reason: 'The create() method should ignore any specified entity id.');
+
+        expect(
+            id,
+            equals(6),
+            reason: 'createWithMap() should return the new entity\'s id.');
+
+        avocadorm.readById(EntityA, id).then(expectAsync((entityA) {
+
+          expect(
+              entityA,
+              isNotNull,
+              reason: 'Created entity should be retrievable, but was not found.');
+
+          expect(
+              entityA.name,
+              equals(newName),
+              reason: 'Created entity should have the name that was given.');
+
+        }));
+
+      }));
+
+    });
+
+    test('Invalid usages of a creation with an entity', () {
 
       expect(
-          id,
-          equals(6),
-          reason: 'retrieveById() should return an instance of type EntityB.');
-
-    }));
-
-  });
-
-  test('Creating an entity (specified id)', () {
-
-    var newEntity = { 'entity_a_id': 12, 'name': 'New Entity!', 'entity_b_id': null };
-
-    avocadorm.save(EntityA, newEntity).then(expectAsync((id) {
+          () => avocadorm.create(null),
+          throwsArgumentError,
+          reason: 'A null entity should throw an exception.');
 
       expect(
-          id,
-          equals(12),
-          reason: 'retrieveById() should return an instance of type EntityB.');
+          () => avocadorm.create('Invalid Type'),
+          throwsArgumentError,
+          reason: 'An entity of an invalid type should throw an exception.');
 
-    }));
+    });
+
+    test('Invalid usages of a creation with an entity map', () {
+
+      expect(
+          () => avocadorm.createFromMap(null, {}),
+          throwsArgumentError,
+          reason: 'A null entity type should throw an exception.');
+
+      expect(
+          () => avocadorm.createFromMap('Invalid Type', {}),
+          throwsArgumentError,
+          reason: 'An entity type of an invalid type should throw an exception.');
+
+      expect(
+          () => avocadorm.createFromMap(EntityA, null),
+          throwsArgumentError,
+          reason: 'A null entity map should throw an exception.');
+
+      expect(
+          () => avocadorm.createFromMap(EntityA, 'Invalid Type'),
+          throwsArgumentError,
+          reason: 'An entity map of an invalid type should throw an exception.');
+
+    });
 
   });
 
-  test('Updating an entity', () {
+  group('Reading entities', () {
 
-    var entity = { 'entity_a_id': 5, 'name': 'Fifth EntityA', 'entity_b_id': null };
+    var avocadorm;
 
-    avocadorm.save(EntityA, entity).then(expectAsync((id) {
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm(new MockDatabaseHandler());
+
+      avocadorm.addEntities([EntityA, EntityB]);
+    });
+
+    test('Normal read of a list of entities', () {
+
+      avocadorm.readAll(EntityA).then(expectAsync((entities) {
+
+        expect(
+            entities.length,
+            equals(5),
+            reason: 'There should be 5 instances of type EntityA.');
+
+        expect(
+            entities.every((e) => e is EntityA),
+            isTrue,
+            reason: 'All retrieved entities should be of type EntityA. Found other types.');
+
+      }));
+
+      avocadorm.readAll(EntityB).then(expectAsync((entities) {
+
+        expect(
+            entities.length,
+            equals(6),
+            reason: 'There should be 6 instances of type EntityB.');
+
+        expect(
+            entities.every((e) => e is EntityB),
+            isTrue,
+            reason: 'All retrieved entities should be of type EntityB. Found other types.');
+
+      }));
+
+    });
+
+    test('Normal read of an entity', () {
+
+      avocadorm.readById(EntityA, 2).then(expectAsync((entity) {
+
+        expect(
+            entity,
+            isNotNull,
+            reason: 'The readById() method should return an instance of type EntityA.');
+
+        expect(
+            entity.entityAId,
+            equals(2),
+            reason: 'The EntityA that was read has the wrong id.');
+
+        expect(
+            entity.name,
+            'Second EntityA',
+            reason: 'The EntityA that was read has the wrong name.');
+
+        expect(
+            entity.entityBId,
+            equals(2),
+            reason: 'The EntityA that was read has the wrong entityB id.');
+
+        expect(
+            entity.entityB,
+            isNull,
+            reason: 'The EntityA that was read has the wrong foreign key value (shoud be null, since no foreignKey was asked for).');
+
+      }));
+
+      avocadorm.readById(EntityB, 3).then(expectAsync((entity) {
+
+        expect(
+            entity,
+            isNotNull,
+            reason: 'The readById() method should return an instance of type EntityB.');
+
+        expect(
+            entity.entityBId,
+            equals(3),
+            reason: 'The EntityB that was read has the wrong id.');
+
+        expect(
+            entity.name,
+            'Third EntityB',
+            reason: 'The EntityB that was read has the wrong name.');
+
+        expect(
+            entity.entityAs,
+            isNull,
+            reason: 'The EntityB that was read has the wrong foreign key value (shoud be null, since no foreignKey was asked for).');
+
+      }));
+
+    });
+
+    test('Normal read of an entity (foreign keys)', () {
+
+      avocadorm.readById(EntityA, 2, foreignKeys: ['entityB']).then(expectAsync((entity) {
+
+        expect(
+            entity,
+            isNotNull,
+            reason: 'The readById() method should return an instance of type EntityA.');
+
+        expect(
+            entity.entityBId,
+            equals(2),
+            reason: 'The EntityA that was read has the wrong entityB id.');
+
+        expect(
+            entity.entityB,
+            isNotNull,
+            reason: 'The EntityA that was read has the wrong foreign key value.');
+
+        expect(
+            entity.entityB.entityBId,
+            equals(entity.entityB),
+            reason: 'The EntityA that was read has the wrong foreign key value');
+
+      }));
+
+      avocadorm.readById(EntityB, 3, foreignKeys: ['entityAs']).then(expectAsync((entity) {
+
+        expect(
+            entity,
+            isNotNull,
+            reason: 'The readById() method should return an instance of type EntityB.');
+
+        expect(
+            entity.entityAs,
+            isNotNull,
+            reason: 'The EntityB that was read has the wrong foreign key value.');
+
+        expect(
+            entity.entityAs is List,
+            isTrue,
+            reason: 'The EntityB that was read has the wrong foreign key value.');
+
+        expect(
+            entity.entityAs.length,
+            equals(1),
+            reason: 'The EntityB that was read has the wrong foreign key value.');
+
+        expect(
+            entity.entityAs.first.entityAId,
+            equals(4),
+            reason: 'The EntityB that was read has the wrong foreign key value.');
+
+      }));
+
+    });
+
+
+
+    test('Invalid usages of a creation with an entity', () {
+
+      expect(
+              () => avocadorm.create(null),
+          throwsArgumentError,
+          reason: 'A null entity should throw an exception.');
+
+      expect(
+              () => avocadorm.create('Invalid Type'),
+          throwsArgumentError,
+          reason: 'An entity of an invalid type should throw an exception.');
+
+    });
+
+    test('Invalid usages of a creation with an entity map', () {
+
+      expect(
+              () => avocadorm.createFromMap(null, {}),
+          throwsArgumentError,
+          reason: 'A null entity type should throw an exception.');
+
+      expect(
+              () => avocadorm.createFromMap('Invalid Type', {}),
+          throwsArgumentError,
+          reason: 'An entity type of an invalid type should throw an exception.');
+
+      expect(
+              () => avocadorm.createFromMap(EntityA, null),
+          throwsArgumentError,
+          reason: 'A null entity map should throw an exception.');
+
+      expect(
+              () => avocadorm.createFromMap(EntityA, 'Invalid Type'),
+          throwsArgumentError,
+          reason: 'An entity map of an invalid type should throw an exception.');
+
+    });
+
+  });
+
+
+
+  skip_test('Updating entities', () {
+
+    avocadorm.addEntities([EntityA, EntityB]);
+
+    var entity = { 'entityAId': 5, 'name': 'Fifth EntityA', 'entityBId': null };
+
+    avocadorm.updateFromMap(EntityA, entity).then(expectAsync((id) {
 
       expect(
           id,
@@ -100,9 +368,11 @@ void main() {
 
   });
 
-  test('Deleting en entity', () {
+  skip_test('Deleting entities', () {
 
-    avocadorm.delete(EntityA, 2).then(expectAsync((r) {
+    avocadorm.addEntities([EntityA, EntityB]);
+
+    avocadorm.deleteById(EntityA, 2).then(expectAsync((r) {
 
       expect(
           r,
