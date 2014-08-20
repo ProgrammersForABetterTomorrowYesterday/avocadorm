@@ -106,19 +106,39 @@ class Avocadorm {
   }
 
   Future<List<Entity>> readAll(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
+    if (entityType == null) {
+      throw new ArgumentError('Argument \'entityType\' must not be null.');
+    }
+
+    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
+      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
+    }
+
     return this._read(entityType, filters: filters, foreignKeys: foreignKeys);
   }
 
   Future<Entity> readById(Type entityType, Object primaryKeyValue, {List<String> foreignKeys}) {
+    if (entityType == null) {
+      throw new ArgumentError('Argument \'entityType\' must not be null.');
+    }
+
+    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
+      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
+    }
+
     if (primaryKeyValue == null) {
-      return new Future.value(null);
+      throw new ArgumentError('Argument \'primaryKeyValue\' must not be null.');
+    }
+
+    if (primaryKeyValue is! num && primaryKeyValue is! String) {
+      throw new ArgumentError('Argument \'primaryKeyValue\' should be a value type.');
     }
 
     var resource = this._getResource(entityType),
         pkColumn = resource.primaryKeyProperty.columnName,
         filters = [new Filter(pkColumn, primaryKeyValue)];
 
-    return this._read(entityType, filters: filters, foreignKeys: foreignKeys)
+    return this._read(entityType, filters: filters, foreignKeys: foreignKeys, limit: 1)
       .then((entities) => entities.length > 0 ? entities.first : null);
   }
 
@@ -176,11 +196,11 @@ class Avocadorm {
       });
   }
 
-  Future<List<Entity>> _read(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
+  Future<List<Entity>> _read(Type entityType, {List<Filter> filters, List<String> foreignKeys, int limit}) {
     var resource = this._getResource(entityType),
         columns = resource.simpleAndPrimaryKeyProperties.map((p) => p.columnName).toList();
 
-    return this._databaseHandler.read(resource.tableName, columns, filters)
+    return this._databaseHandler.read(resource.tableName, columns, filters, limit)
       .then((entities) => entities.map((e) => this._convertToEntity(e, resource)))
       .then((entities) => Future.wait(entities.map((e) => _retrieveForeignKeys(e, foreignKeys))));
   }
@@ -236,21 +256,26 @@ class Avocadorm {
         var future = null;
 
         if (p.isManyToOne) {
-          var id = entityMirror.getField(new Symbol(p.targetName)).reflectee;
+          var targetResource = this._getResource(p.type),
+              targetPkColumn = targetResource.primaryKeyProperty.columnName,
+              targetPkValue = entityMirror.getField(new Symbol(p.targetName)).reflectee,
+              filters = [new Filter(targetPkColumn, targetPkValue)];
 
-          future = this.readById(
+          future = this._read(
               p.type,
-              id,
-              foreignKeys: traverseForeignKeyList(foreignKeys, p.name));
+              filters: filters,
+              foreignKeys: traverseForeignKeyList(foreignKeys, p.name),
+              limit: 1)
+            .then((entity) => entity.length > 0 ? entity.first : null);
         }
         else if (p.isOneToMany) {
           var targetResource = this._getResource(p.type);
-          var targetProperty = targetResource.simpleProperties.firstWhere((tp) => tp.name == p.targetName);
+          var targetColumn = targetResource.simpleProperties.firstWhere((tp) => tp.name == p.targetName).columnName;
           var targetValue = entityMirror.getField(new Symbol(resource.primaryKeyProperty.name)).reflectee;
 
-          future = this.readAll(
+          future = this._read(
               p.type,
-              filters: [new Filter(targetProperty, targetValue)],
+              filters: [new Filter(targetColumn, targetValue)],
               foreignKeys: traverseForeignKeyList(foreignKeys, p.name));
         }
 

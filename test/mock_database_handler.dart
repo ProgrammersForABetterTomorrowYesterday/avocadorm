@@ -12,11 +12,15 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
     return new Future.value(data[pkColumn]);
   }
 
-  Future<List<Map>> read(String table, List<String> columns, [List<Filter> filters]) {
+  Future<List<Map>> read(String table, List<String> columns, [List<Filter> filters, int limit]) {
     var entities = _entityRepository[table];
 
     if (filters != null) {
       entities = entities.where((e) => filters.every((f) => e[f.column] == f.value));
+    }
+
+    if (limit != null) {
+      entities = entities.take(limit);
     }
 
     return new Future.value(entities);

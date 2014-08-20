@@ -110,7 +110,7 @@ void main() {
 
     });
 
-    test('Invalid usages of a creation with an entity', () {
+    test('Invalid usages when creating with an entity', () {
 
       expect(
           () => avocadorm.create(null),
@@ -124,7 +124,7 @@ void main() {
 
     });
 
-    test('Invalid usages of a creation with an entity map', () {
+    test('Invalid usages when creating with an entity map', () {
 
       expect(
           () => avocadorm.createFromMap(null, {}),
@@ -271,7 +271,7 @@ void main() {
 
         expect(
             entity.entityB.entityBId,
-            equals(entity.entityB),
+            equals(entity.entityBId),
             reason: 'The EntityA that was read has the wrong foreign key value');
 
       }));
@@ -307,43 +307,41 @@ void main() {
 
     });
 
-
-
-    test('Invalid usages of a creation with an entity', () {
+    test('Invalid usages when reading a list of entities', () {
 
       expect(
-              () => avocadorm.create(null),
+          () => avocadorm.readAll(null),
           throwsArgumentError,
           reason: 'A null entity should throw an exception.');
 
       expect(
-              () => avocadorm.create('Invalid Type'),
+          () => avocadorm.readAll('Invalid type'),
           throwsArgumentError,
-          reason: 'An entity of an invalid type should throw an exception.');
+          reason: 'An entity type of an invalid type should throw an exception.');
 
     });
 
-    test('Invalid usages of a creation with an entity map', () {
+    test('Invalid usages when reading an entity', () {
 
       expect(
-              () => avocadorm.createFromMap(null, {}),
+          () => avocadorm.readById(null, {}),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
 
       expect(
-              () => avocadorm.createFromMap('Invalid Type', {}),
+          () => avocadorm.readById('Invalid Type', {}),
           throwsArgumentError,
           reason: 'An entity type of an invalid type should throw an exception.');
 
       expect(
-              () => avocadorm.createFromMap(EntityA, null),
+          () => avocadorm.readById(EntityA, null),
           throwsArgumentError,
-          reason: 'A null entity map should throw an exception.');
+          reason: 'A null primary key value should throw an exception.');
 
       expect(
-              () => avocadorm.createFromMap(EntityA, 'Invalid Type'),
+          () => avocadorm.readById(EntityA, null),
           throwsArgumentError,
-          reason: 'An entity map of an invalid type should throw an exception.');
+          reason: 'A primary key value that is not of a value type should throw an exception.');
 
     });
 
@@ -352,6 +350,23 @@ void main() {
 
 
   skip_test('Updating entities', () {
+
+    avocadorm.addEntities([EntityA, EntityB]);
+
+    var entity = { 'entityAId': 5, 'name': 'Fifth EntityA', 'entityBId': null };
+
+    avocadorm.updateFromMap(EntityA, entity).then(expectAsync((id) {
+
+      expect(
+          id,
+          equals(5),
+          reason: 'retrieveById() should return an instance of type EntityB.');
+
+    }));
+
+  });
+
+  skip_test('Saving entities', () {
 
     avocadorm.addEntities([EntityA, EntityB]);
 

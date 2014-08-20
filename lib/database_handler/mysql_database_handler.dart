@@ -22,13 +22,17 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     });
   }
 
-  Future<List<Map>> read(String table, List<String> columns, [List<Filter> filters]) {
+  Future<List<Map>> read(String table, List<String> columns, [List<Filter> filters, int limit]) {
     var cols = columns.map((c) => '`${c}`');
 
     var script = 'SELECT ${cols.join(', ')} FROM `${table}`';
 
     if (filters != null && filters.length > 0) {
       script += '\nWHERE ${_constructFilter(filters)}';
+    }
+
+    if (limit != null) {
+      script += '\nLIMIT ${limit}';
     }
 
     script += ';';

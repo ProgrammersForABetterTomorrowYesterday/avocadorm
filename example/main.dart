@@ -13,18 +13,28 @@ void main() {
   var avocadorm = new Avocadorm(databaseHandler)
     ..addEntitiesInLibrary('entities');
 
-  avocadorm.readById(Employee, 2).then((employee) {
+  avocadorm.readById(Employee, 2, foreignKeys: ['company']).then((employee) {
     print(JSON.encode(employee));
 
-    employee.name = 'Christina Johnson';
+    employee.test();
 
-    avocadorm.update(employee).then((id) {
+//    employee.name = 'Christina Johnson';
+//
+//    avocadorm.update(employee).then((id) {
+//
+//      avocadorm.readById(Employee, 2).then((employee) {
+//        print(JSON.encode(employee));
+//      });
+//
+//    });
 
-      avocadorm.readById(Employee, 2).then((employee) {
-        print(JSON.encode(employee));
-      });
-
-    });
   });
+
+  avocadorm.readById(Company, 3, foreignKeys: ['employees']).then((company) {
+
+    print(JSON.encode(company));
+
+  });
+
 }
    
