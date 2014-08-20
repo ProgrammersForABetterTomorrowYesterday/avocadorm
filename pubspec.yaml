@@ -9,6 +9,3 @@ dependencies:
 dev_dependencies:
   unittest: any
   mock: any
-dependency_overrides:
-  magnetfruit_entity:
-    path: ../entity/
