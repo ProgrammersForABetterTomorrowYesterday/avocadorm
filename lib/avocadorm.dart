@@ -143,31 +143,79 @@ class Avocadorm {
   }
 
   Future<Object> update(Entity entity) {
+    if (entity == null) {
+      throw new ArgumentError('Argument \'entity\' must not be null.');
+    }
+
+    if (entity is! Entity) {
+      throw new ArgumentError('Argument \'entity\' should be an Entity.');
+    }
+
     var entityType = entity.runtimeType,
         dbMap = this._convertFromEntity(entity);
 
     return this._update(entityType, dbMap);
   }
 
-  Future<Object> updateFromMap(Type entityType, Map data) {
-    var resource = this._getResource(entityType),
-        dbMap = this._convertFromEntityMap(data, resource);
+  Future<Object> updateFromMap(Type entityType, Map entityMap) {
+    if (entityType == null) {
+      throw new ArgumentError('Argument \'entityType\' must not be null.');
+    }
 
-    return this._update(entityType, dbMap);
+    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
+      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
+    }
+
+    if (entityMap == null) {
+      throw new ArgumentError('Argument \'entityMap\' must not be null.');
+    }
+
+    if (entityMap is! Map) {
+      throw new ArgumentError('Argument \'entityMap\' should be a Map.');
+    }
+
+    var resource = this._getResource(entityType),
+        data = this._convertFromEntityMap(entityMap, resource);
+
+    return this._update(entityType, data);
   }
 
   Future<Object> save(Entity entity) {
+    if (entity == null) {
+      throw new ArgumentError('Argument \'entity\' must not be null.');
+    }
+
+    if (entity is! Entity) {
+      throw new ArgumentError('Argument \'entity\' should be an Entity.');
+    }
+
     var entityType = entity.runtimeType,
         dbMap = this._convertFromEntity(entity);
 
     return this._update(entityType, dbMap);
   }
 
-  Future<Object> saveFromMap(Type entityType, Map data) {
-    var resource = this._getResource(entityType),
-        dbMap = this._convertFromEntityMap(data, resource);
+  Future<Object> saveFromMap(Type entityType, Map entityMap) {
+    if (entityType == null) {
+      throw new ArgumentError('Argument \'entityType\' must not be null.');
+    }
 
-    return this._update(entityType, dbMap);
+    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
+      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
+    }
+
+    if (entityMap == null) {
+      throw new ArgumentError('Argument \'entityMap\' must not be null.');
+    }
+
+    if (entityMap is! Map) {
+      throw new ArgumentError('Argument \'entityMap\' should be a Map.');
+    }
+
+    var resource = this._getResource(entityType),
+        data = this._convertFromEntityMap(entityMap, resource);
+
+    return this._update(entityType, data);
   }
 
   Future delete(Entity entity) {

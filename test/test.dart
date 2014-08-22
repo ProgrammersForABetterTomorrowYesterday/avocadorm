@@ -347,41 +347,240 @@ void main() {
 
   });
 
+  group('Updating entities', () {
 
+    var avocadorm;
 
-  skip_test('Updating entities', () {
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm(new MockDatabaseHandler());
 
-    avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm.addEntities([EntityA, EntityB]);
+    });
 
-    var entity = { 'entityAId': 5, 'name': 'Fifth EntityA', 'entityBId': null };
+    test('Normal update with an entity', () {
 
-    avocadorm.updateFromMap(EntityA, entity).then(expectAsync((id) {
+      var entityId = 12,
+          entityName = 'Entity!',
+          entity = new EntityA()
+            ..entityAId = entityId
+            ..name = entityName
+            ..entityBId = null;
+
+      avocadorm.update(entity).then(expectAsync((id) {
+
+        expect(
+            id,
+            equals(entityId),
+            reason: 'The update() method should not change the entity id.');
+
+        avocadorm.readById(EntityA, id).then(expectAsync((entityA) {
+
+          expect(
+              entityA,
+              isNotNull,
+              reason: 'Updated entity should be retrievable, but was not found.');
+
+          expect(
+              entityA.name,
+              equals(entityName),
+              reason: 'Updated entity should have the name that was given.');
+
+        }));
+
+      }));
+
+    });
+
+    test('Normal update with an entity map', () {
+
+      var entityId = 12,
+          entityName = 'Entity!',
+          entityMap = { 'entityAId': entityId, 'name': entityName, 'entityBId': null };
+
+      avocadorm.updateFromMap(EntityA, entityMap).then(expectAsync((id) {
+
+        expect(
+            id,
+            equals(entityId),
+            reason: 'The update() method should not change the entity id.');
+
+        avocadorm.readById(EntityA, id).then(expectAsync((entityA) {
+
+          expect(
+              entityA,
+              isNotNull,
+              reason: 'Updated entity should be retrievable, but was not found.');
+
+          expect(
+              entityA.name,
+              equals(entityName),
+              reason: 'Updated entity should have the name that was given.');
+
+        }));
+
+      }));
+
+    });
+
+    test('Invalid usages when updating with an entity', () {
 
       expect(
-          id,
-          equals(5),
-          reason: 'retrieveById() should return an instance of type EntityB.');
+          () => avocadorm.update(null),
+          throwsArgumentError,
+          reason: 'A null entity should throw an exception.');
 
-    }));
+      expect(
+          () => avocadorm.update('Invalid Type'),
+          throwsArgumentError,
+          reason: 'An entity of an invalid type should throw an exception.');
+
+    });
+
+    test('Invalid usages when updating with an entity map', () {
+
+      expect(
+          () => avocadorm.updateFromMap(null, {}),
+          throwsArgumentError,
+          reason: 'A null entity type should throw an exception.');
+
+      expect(
+          () => avocadorm.updateFromMap('Invalid Type', {}),
+          throwsArgumentError,
+          reason: 'An entity type of an invalid type should throw an exception.');
+
+      expect(
+          () => avocadorm.updateFromMap(EntityA, null),
+          throwsArgumentError,
+          reason: 'A null entity map should throw an exception.');
+
+      expect(
+          () => avocadorm.updateFromMap(EntityA, 'Invalid Type'),
+          throwsArgumentError,
+          reason: 'An entity map of an invalid type should throw an exception.');
+
+    });
 
   });
 
-  skip_test('Saving entities', () {
+  group('Saving entities', () {
 
-    avocadorm.addEntities([EntityA, EntityB]);
+    var avocadorm;
 
-    var entity = { 'entityAId': 5, 'name': 'Fifth EntityA', 'entityBId': null };
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm(new MockDatabaseHandler());
 
-    avocadorm.updateFromMap(EntityA, entity).then(expectAsync((id) {
+      avocadorm.addEntities([EntityA, EntityB]);
+    });
+
+    test('Normal save with an entity', () {
+
+      var entityId = 12,
+          entityName = 'Entity!',
+          entity = new EntityA()
+            ..entityAId = entityId
+            ..name = entityName
+            ..entityBId = null;
+
+      avocadorm.save(entity).then(expectAsync((id) {
+
+        expect(
+            id,
+            equals(entityId),
+            reason: 'The save() method should not change the entity id.');
+
+        avocadorm.readById(EntityA, id).then(expectAsync((entityA) {
+
+          expect(
+              entityA,
+              isNotNull,
+              reason: 'Saved entity should be retrievable, but was not found.');
+
+          expect(
+              entityA.name,
+              equals(entityName),
+              reason: 'Saved entity should have the name that was given.');
+
+        }));
+
+      }));
+
+    });
+
+    test('Normal save with an entity map', () {
+
+      var entityId = 12,
+          entityName = 'Entity!',
+          entityMap = { 'entityAId': entityId, 'name': entityName, 'entityBId': null };
+
+      avocadorm.saveFromMap(EntityA, entityMap).then(expectAsync((id) {
+
+        expect(
+            id,
+            equals(entityId),
+            reason: 'The save() method should not change the entity id.');
+
+        avocadorm.readById(EntityA, id).then(expectAsync((entityA) {
+
+          expect(
+              entityA,
+              isNotNull,
+              reason: 'Saved entity should be retrievable, but was not found.');
+
+          expect(
+              entityA.name,
+              equals(entityName),
+              reason: 'Saved entity should have the name that was given.');
+
+        }));
+
+      }));
+
+    });
+
+    test('Invalid usages when saving with an entity', () {
 
       expect(
-          id,
-          equals(5),
-          reason: 'retrieveById() should return an instance of type EntityB.');
+          () => avocadorm.save(null),
+          throwsArgumentError,
+          reason: 'A null entity should throw an exception.');
 
-    }));
+      expect(
+          () => avocadorm.save('Invalid Type'),
+          throwsArgumentError,
+          reason: 'An entity of an invalid type should throw an exception.');
+
+    });
+
+    test('Invalid usages when saving with an entity map', () {
+
+      expect(
+          () => avocadorm.saveFromMap(null, {}),
+          throwsArgumentError,
+          reason: 'A null entity type should throw an exception.');
+
+      expect(
+          () => avocadorm.saveFromMap('Invalid Type', {}),
+          throwsArgumentError,
+          reason: 'An entity type of an invalid type should throw an exception.');
+
+      expect(
+          () => avocadorm.saveFromMap(EntityA, null),
+          throwsArgumentError,
+          reason: 'A null entity map should throw an exception.');
+
+      expect(
+          () => avocadorm.saveFromMap(EntityA, 'Invalid Type'),
+          throwsArgumentError,
+          reason: 'An entity map of an invalid type should throw an exception.');
+
+    });
 
   });
+
+
+
 
   skip_test('Deleting entities', () {
 
