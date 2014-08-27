@@ -105,6 +105,26 @@ class Avocadorm {
     return this._create(entityType, data);
   }
 
+  Future<int> count(Type entityType, [Object primaryKeyValue]) {
+    if (entityType == null) {
+      throw new ArgumentError('Argument \'entityType\' must not be null.');
+    }
+
+    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
+      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
+    }
+
+    if (primaryKeyValue != null && primaryKeyValue is! num && primaryKeyValue is! String) {
+      throw new ArgumentError('Argument \'primaryKeyValue\' should be a value type.');
+    }
+
+    var resource = this._getResource(entityType),
+        pkColumn = resource.primaryKeyProperty.columnName,
+        filters = primaryKeyValue != null ? [new Filter(pkColumn, primaryKeyValue)] : null;
+
+    return this._count(entityType, filters: filters);
+  }
+
   Future<List<Entity>> readAll(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
     if (entityType == null) {
       throw new ArgumentError('Argument \'entityType\' must not be null.');
@@ -266,6 +286,12 @@ class Avocadorm {
         this._saveForeignKeys(entityType, data);
         return pkValue;
       });
+  }
+
+  Future<int> _count(Type entityType, {List<Filter> filters}) {
+    var resource = this._getResource(entityType);
+
+    return this._databaseHandler.count(resource.tableName, filters);
   }
 
   Future<List<Entity>> _read(Type entityType, {List<Filter> filters, List<String> foreignKeys, int limit}) {

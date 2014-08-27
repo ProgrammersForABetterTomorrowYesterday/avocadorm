@@ -22,6 +22,22 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     });
   }
 
+  Future<int> count(String table, [List<Filter> filters]) {
+    var script = 'SELECT COUNT(*) FROM `${table}`';
+
+    if (filters != null && filters.length > 0) {
+      script += '\nWHERE ${_constructFilter(filters)}';
+    }
+
+    script += ';';
+
+    return this.pool.query(script).then((results) {
+      return results.first.then((row) {
+        return row.first;
+      });
+    });
+  }
+
   Future<List<Map>> read(String table, List<String> columns, [List<Filter> filters, int limit]) {
     var cols = columns.map((c) => '`${c}`');
 
