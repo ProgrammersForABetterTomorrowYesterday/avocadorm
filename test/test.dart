@@ -324,12 +324,12 @@ void main() {
     test('Invalid usages when reading an entity', () {
 
       expect(
-          () => avocadorm.readById(null, {}),
+          () => avocadorm.readById(null, 0),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
 
       expect(
-          () => avocadorm.readById('Invalid Type', {}),
+          () => avocadorm.readById('Invalid Type', 0),
           throwsArgumentError,
           reason: 'An entity type of an invalid type should throw an exception.');
 
@@ -339,7 +339,7 @@ void main() {
           reason: 'A null primary key value should throw an exception.');
 
       expect(
-          () => avocadorm.readById(EntityA, null),
+          () => avocadorm.readById(EntityA, {}),
           throwsArgumentError,
           reason: 'A primary key value that is not of a value type should throw an exception.');
 
@@ -579,21 +579,96 @@ void main() {
 
   });
 
+  group('Deleting entities', () {
 
+    var avocadorm;
 
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm(new MockDatabaseHandler());
 
-  skip_test('Deleting entities', () {
+      avocadorm.addEntities([EntityA, EntityB]);
+    });
 
-    avocadorm.addEntities([EntityA, EntityB]);
+    test('Normal creation with an entity', () {
 
-    avocadorm.deleteById(EntityA, 2).then(expectAsync((r) {
+      var entityId = 2,
+          entity = new EntityA()
+            ..entityAId = entityId
+            ..name = 'New Entity!'
+            ..entityBId = null;
+
+      avocadorm.delete(entity).then(expectAsync((r) {
+
+        avocadorm.readById(EntityA, entityId).then(expectAsync((entityA) {
+
+          expect(
+              entityA,
+              isNull,
+              reason: 'Deleted entity should not be readable.');
+
+        }));
+
+      }));
+
+    });
+
+    test('Normal creation with an id', () {
+
+      var entityId = 2;
+
+      avocadorm.deleteById(EntityA, entityId).then(expectAsync((r) {
+
+        avocadorm.readById(EntityA, entityId).then(expectAsync((entityA) {
+
+          expect(
+              entityA,
+              isNull,
+              reason: 'Deleted entity should not be readable.');
+
+        }));
+
+      }));
+
+    });
+
+    test('Invalid usages when creating with an entity', () {
 
       expect(
-          r,
-          isNull,
-          reason: 'retrieveById() should return an instance of type EntityB.');
+          () => avocadorm.create(null),
+          throwsArgumentError,
+          reason: 'A null entity should throw an exception.');
 
-    }));
+      expect(
+          () => avocadorm.create('Invalid Type'),
+          throwsArgumentError,
+          reason: 'An entity of an invalid type should throw an exception.');
+
+    });
+
+    test('Invalid usages when creating with an entity map', () {
+
+      expect(
+          () => avocadorm.readById(null, 0),
+          throwsArgumentError,
+          reason: 'A null entity type should throw an exception.');
+
+      expect(
+          () => avocadorm.readById('Invalid Type', 0),
+          throwsArgumentError,
+          reason: 'An entity type of an invalid type should throw an exception.');
+
+      expect(
+          () => avocadorm.readById(EntityA, null),
+          throwsArgumentError,
+          reason: 'A null primary key value should throw an exception.');
+
+      expect(
+          () => avocadorm.readById(EntityA, {}),
+          throwsArgumentError,
+          reason: 'A primary key value that is not of a value type should throw an exception.');
+
+    });
 
   });
 

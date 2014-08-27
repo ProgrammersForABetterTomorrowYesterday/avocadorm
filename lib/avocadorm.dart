@@ -219,16 +219,40 @@ class Avocadorm {
   }
 
   Future delete(Entity entity) {
+    if (entity == null) {
+      throw new ArgumentError('Argument \'entity\' must not be null.');
+    }
+
+    if (entity is! Entity) {
+      throw new ArgumentError('Argument \'entity\' should be an Entity.');
+    }
+
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName,
-        pkValue = reflect(entity).getField(new Symbol(pkColumn));
+        pkColumn = resource.primaryKeyProperty.name,
+        pkValue = reflect(entity).getField(new Symbol(pkColumn)).reflectee;
 
     return this._delete(entityType, pkValue);
   }
 
-  Future deleteById(Type entityType, Object pkValue) {
-    return this._delete(entityType, pkValue);
+  Future deleteById(Type entityType, Object primaryKeyValue) {
+    if (entityType == null) {
+      throw new ArgumentError('Argument \'entityType\' must not be null.');
+    }
+
+    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
+      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
+    }
+
+    if (primaryKeyValue == null) {
+      throw new ArgumentError('Argument \'primaryKeyValue\' must not be null.');
+    }
+
+    if (primaryKeyValue is! num && primaryKeyValue is! String) {
+      throw new ArgumentError('Argument \'primaryKeyValue\' should be a value type.');
+    }
+
+    return this._delete(entityType, primaryKeyValue);
   }
 
 
