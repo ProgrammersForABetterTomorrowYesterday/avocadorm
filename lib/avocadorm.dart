@@ -78,9 +78,10 @@ class Avocadorm {
     }
 
     var entityType = entity.runtimeType,
+        resource = this._getResource(entityType),
         data = this._convertFromEntity(entity);
 
-    return this._create(entityType, data);
+    return this._create(resource, data);
   }
 
   Future<Object> createFromMap(Type entityType, Map entityMap) {
@@ -103,7 +104,7 @@ class Avocadorm {
     var resource = this._getResource(entityType),
         data = this._convertFromEntityMap(entityMap, resource);
 
-    return this._create(entityType, data);
+    return this._create(resource, data);
   }
 
   Future<bool> hasId(Type entityType, Object primaryKeyValue) {
@@ -127,7 +128,7 @@ class Avocadorm {
         pkColumn = resource.primaryKeyProperty.columnName,
         filters = [new Filter(pkColumn, primaryKeyValue)];
 
-    return this._count(entityType, filters: filters)
+    return this._count(resource, filters: filters)
       .then((count) => count > 0);
   }
 
@@ -140,7 +141,9 @@ class Avocadorm {
       throw new ArgumentError('Argument \'entityType\' should be an Entity.');
     }
 
-    return this._count(entityType, filters: filters);
+    var resource = this._getResource(entityType);
+
+    return this._count(resource, filters: filters);
   }
 
   Future<List<Entity>> readAll(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
@@ -152,7 +155,9 @@ class Avocadorm {
       throw new ArgumentError('Argument \'entityType\' should be an Entity.');
     }
 
-    return this._read(entityType, filters: filters, foreignKeys: foreignKeys);
+    var resource = this._getResource(entityType);
+
+    return this._read(resource, filters: filters, foreignKeys: foreignKeys);
   }
 
   Future<Entity> readById(Type entityType, Object primaryKeyValue, {List<String> foreignKeys}) {
@@ -176,7 +181,7 @@ class Avocadorm {
         pkColumn = resource.primaryKeyProperty.columnName,
         filters = [new Filter(pkColumn, primaryKeyValue)];
 
-    return this._read(entityType, filters: filters, foreignKeys: foreignKeys, limit: 1)
+    return this._read(resource, filters: filters, foreignKeys: foreignKeys, limit: 1)
       .then((entities) => entities.length > 0 ? entities.first : null);
   }
 
@@ -190,9 +195,10 @@ class Avocadorm {
     }
 
     var entityType = entity.runtimeType,
-        dbMap = this._convertFromEntity(entity);
+        resource = this._getResource(entityType),
+        data = this._convertFromEntity(entity);
 
-    return this._update(entityType, dbMap);
+    return this._update(resource, data);
   }
 
   Future<Object> updateFromMap(Type entityType, Map entityMap) {
@@ -215,7 +221,7 @@ class Avocadorm {
     var resource = this._getResource(entityType),
         data = this._convertFromEntityMap(entityMap, resource);
 
-    return this._update(entityType, data);
+    return this._update(resource, data);
   }
 
   Future<Object> save(Entity entity) {
@@ -228,9 +234,10 @@ class Avocadorm {
     }
 
     var entityType = entity.runtimeType,
-        dbMap = this._convertFromEntity(entity);
+        resource = this._getResource(entityType),
+        data = this._convertFromEntity(entity);
 
-    return this._update(entityType, dbMap);
+    return this._update(resource, data);
   }
 
   Future<Object> saveFromMap(Type entityType, Map entityMap) {
@@ -253,7 +260,7 @@ class Avocadorm {
     var resource = this._getResource(entityType),
         data = this._convertFromEntityMap(entityMap, resource);
 
-    return this._update(entityType, data);
+    return this._update(resource, data);
   }
 
   Future delete(Entity entity) {
@@ -270,7 +277,7 @@ class Avocadorm {
         pkColumn = resource.primaryKeyProperty.name,
         pkValue = reflect(entity).getField(new Symbol(pkColumn)).reflectee;
 
-    return this._delete(entityType, pkValue);
+    return this._delete(resource, pkValue);
   }
 
   Future deleteById(Type entityType, Object primaryKeyValue) {
@@ -290,16 +297,17 @@ class Avocadorm {
       throw new ArgumentError('Argument \'primaryKeyValue\' should be a value type.');
     }
 
-    return this._delete(entityType, primaryKeyValue);
+    var resource = this._getResource(entityType);
+
+    return this._delete(resource, primaryKeyValue);
   }
 
 
-  Future<Object> _create(Type entityType, Map data) {
-    var resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName,
+  Future<Object> _create(Resource resource, Map data) {
+    var pkColumn = resource.primaryKeyProperty.columnName,
         columns = resource.simpleProperties.map((p) => p.columnName).toList();
 
-    return this._count(entityType, filters: [new Filter(pkColumn, data[pkColumn])])
+    return this._count(resource, filters: [new Filter(pkColumn, data[pkColumn])])
       .then((count) {
         if (count > 0) {
           throw new AvocadormException('Can not create entity - primary key value is already in the database.');
@@ -307,42 +315,37 @@ class Avocadorm {
 
         return this._databaseHandler.create(resource.tableName, pkColumn, columns, data)
           .then((pkValue) {
-            this._saveForeignKeys(entityType, data);
+            this._saveForeignKeys(resource, data);
             return pkValue;
           });
       });
 }
 
-  Future<int> _count(Type entityType, {List<Filter> filters}) {
-    var resource = this._getResource(entityType);
-
+  Future<int> _count(Resource resource, {List<Filter> filters}) {
     return this._databaseHandler.count(resource.tableName, filters);
   }
 
-  Future<List<Entity>> _read(Type entityType, {List<Filter> filters, List<String> foreignKeys, int limit}) {
-    var resource = this._getResource(entityType),
-        columns = resource.simpleAndPrimaryKeyProperties.map((p) => p.columnName).toList();
+  Future<List<Entity>> _read(Resource resource, {List<Filter> filters, List<String> foreignKeys, int limit}) {
+    var columns = resource.simpleAndPrimaryKeyProperties.map((p) => p.columnName).toList();
 
     return this._databaseHandler.read(resource.tableName, columns, filters, limit)
       .then((entities) => entities.map((e) => this._convertToEntity(e, resource)))
       .then((entities) => Future.wait(entities.map((e) => _retrieveForeignKeys(e, foreignKeys))));
   }
 
-  Future<Object> _update(Type entityType, Map data) {
-    var resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName,
+  Future<Object> _update(Resource resource, Map data) {
+    var pkColumn = resource.primaryKeyProperty.columnName,
         columns = resource.simpleProperties.map((p) => p.columnName).toList();
 
     return this._databaseHandler.update(resource.tableName, pkColumn, columns, data)
       .then((pkValue) {
-        this._saveForeignKeys(entityType, data);
+        this._saveForeignKeys(resource, data);
         return pkValue;
       });
   }
 
-  Future _delete(Type entityType, Object pkValue) {
-    var resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName,
+  Future _delete(Resource resource, Object pkValue) {
+    var pkColumn = resource.primaryKeyProperty.columnName,
         filters = [new Filter(pkColumn, pkValue)];
 
     return this._databaseHandler.delete(resource.tableName, filters);
@@ -385,7 +388,7 @@ class Avocadorm {
               filters = [new Filter(targetPkColumn, targetPkValue)];
 
           future = this._read(
-              p.type,
+              this._getResource(p.type),
               filters: filters,
               foreignKeys: traverseForeignKeyList(foreignKeys, p.name),
               limit: 1)
@@ -397,7 +400,7 @@ class Avocadorm {
           var targetValue = entityMirror.getField(new Symbol(resource.primaryKeyProperty.name)).reflectee;
 
           future = this._read(
-              p.type,
+              this._getResource(p.type),
               filters: [new Filter(targetColumn, targetValue)],
               foreignKeys: traverseForeignKeyList(foreignKeys, p.name));
         }
@@ -410,14 +413,13 @@ class Avocadorm {
     return Future.wait(futures).then((r) => entity);
   }
 
-  Future _saveForeignKeys(Type entityType, Map data) {
-    var futures = [],
-        resource = this._getResource(entityType);
+  Future _saveForeignKeys(Resource resource, Map data) {
+    var futures = [];
 
     resource.foreignKeyProperties
       .where((fk) => fk.onUpdateOperation == ReferentialAction.CASCADE)
       .where((fk) => data[fk.name] != null)
-      .forEach((fk) => futures.add(this.save(fk.type, data[fk.name])));
+      .forEach((fk) => futures.add(this._update(this._getResource(fk.type), data[fk.name])));
 
     return Future.wait(futures);
   }
