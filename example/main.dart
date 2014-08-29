@@ -7,6 +7,12 @@ import 'entities/entities.dart';
 var avocadorm;
 
 void main() {
+  // This example can be used after executing the mysql_script.sql script.
+  // The script will create:
+  // - the avocadorm_example database
+  // - two users with differing privileges (avocadorm_guest, avocadorm_admin)
+  // - three tables (employee, company, employee_type) with some data
+
   // avocadorm_guest has SELECT privileges.
   //var databaseHandler = new MySqlDatabaseHandler('localhost', 3306, 'avocadorm_example', 'avocadorm_guest', 'pwd');
 

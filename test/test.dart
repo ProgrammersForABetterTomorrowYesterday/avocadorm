@@ -24,6 +24,83 @@ void main() {
 
   });
 
+  group('Specifying the entities', () {
+    var avocadorm;
+
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm(new MockDatabaseHandler());
+    });
+
+    test('Specifying a library of entity', () {
+
+      expect(
+          () => avocadorm.addEntitiesInLibrary(null),
+          throwsArgumentError,
+          reason: 'A null library name should throw an exception.');
+
+      expect(
+          () => avocadorm.addEntitiesInLibrary({'type': 'Invalid type'}),
+          throwsArgumentError,
+          reason: 'A library name of an invalid type should throw an exception.');
+
+      expect(
+          () => avocadorm.addEntitiesInLibrary('Invalid library name'),
+          throwsArgumentError,
+          reason: 'An invalid library name should throw an exception.');
+
+      expect(
+          avocadorm.addEntitiesInLibrary('entities'),
+          equals(2),
+          reason: 'A valid library name should not throw an exception.');
+
+    });
+
+    test('Specifying a list of entity', () {
+
+      expect(
+          () => avocadorm.addEntities(null),
+          throwsArgumentError,
+          reason: 'A null list of entity type should throw an exception.');
+
+      expect(
+          () => avocadorm.addEntities('Invalid type'),
+          throwsArgumentError,
+          reason: 'A list of entity type that is not a list should throw an exception.');
+
+      expect(
+          () => avocadorm.addEntities(['Invalid type']),
+          throwsArgumentError,
+          reason: 'An list of entity type in which an entity type is of an invalid type should throw an exception.');
+
+      expect(
+          avocadorm.addEntities([EntityA, EntityB]),
+          equals(2),
+          reason: 'A valid library name should not throw an exception.');
+
+    });
+
+    test('Specifying an entity', () {
+
+      expect(
+          () => avocadorm.addEntity(null),
+          throwsArgumentError,
+          reason: 'A null entity type should throw an exception.');
+
+      expect(
+          () => avocadorm.addEntity('Invalid type'),
+          throwsArgumentError,
+          reason: 'An entity type of an invalid type should throw an exception.');
+
+      expect(
+          avocadorm.addEntity(EntityA),
+          equals(1),
+          reason: 'A valid library name should not throw an exception.');
+
+    });
+
+  });
+
   group('Creating entities', () {
 
     var avocadorm;
@@ -717,6 +794,49 @@ void main() {
       }));
 
     });
+
+    skip_test('Normal save with new m2o foreign key', () {
+
+      var entityAId = 3,
+          entityBId = 10,
+          entityBName = 'New EntityB',
+          entityB = new EntityB()
+            ..entityBId = entityBId
+            ..name = entityBName,
+          entity = new EntityA()
+            ..entityAId = entityAId
+            ..name = 'EntityA'
+            ..entityBId = entityBId
+            ..entityB = entityB;
+
+      avocadorm.save(entity).then(expectAsync((id) {
+
+        avocadorm.readById(EntityB, entityBId).then(expectAsync((entityB) {
+
+          expect(
+              entityB,
+              isNotNull,
+              reason: 'Created foreign key entity should be retrievable, but was not found.');
+
+          expect(
+              entityB.name,
+              equals(entityBName),
+              reason: 'Created foreign key entity should have the name that was given.');
+
+        }));
+
+      }));
+
+    });
+
+    test('Normal save with new o2m foreign keys', () { });
+
+    test('Normal save with existing m2o foreign key', () { });
+
+    test('Normal save with existing o2m foreign keys', () { });
+
+    // Id of foreign key is set on original entity.
+    test('Normal save with conflicting foreign key id', () { });
 
     test('Invalid usages when saving with an entity', () {
 

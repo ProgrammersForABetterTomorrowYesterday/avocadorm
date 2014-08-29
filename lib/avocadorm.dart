@@ -32,30 +32,64 @@ class Avocadorm {
     this._resources = [];
   }
 
-  void addEntitiesInLibrary(String libraryName) {
-    LibraryMirror lib = currentMirrorSystem().findLibrary(new Symbol(libraryName));
+  int addEntitiesInLibrary(String libraryName) {
+    if (libraryName == null) {
+      throw new ArgumentError('Argument \'libraryName\' must not be null.');
+    }
+
+    if (libraryName is! String) {
+      throw new ArgumentError('Argument \'libraryName\' must be a String.');
+    }
+
+    LibraryMirror lib;
+
+    try {
+      lib = currentMirrorSystem().findLibrary(new Symbol(libraryName));
+    } on StateError {
+      throw new ArgumentError('Argument \'libraryName\' must designate a valid library name.');
+    }
+
+    var count = 0;
 
     lib.declarations.values
       .where((dm) => dm is ClassMirror)
       .map((dm) => dm as ClassMirror)
       .where((cm) => cm.isSubtypeOf(reflectType(Entity)))
       .map((cm) => cm.reflectedType)
-      .forEach(addEntity);
+      .forEach((et) {
+        if (this._addEntityResource(et)) {
+          count++;
+        }
+      });
+
+    return count;
   }
 
-  void addEntities(List<Type> entityTypes) {
+  int addEntities(List<Type> entityTypes) {
     if (entityTypes == null) {
       throw new ArgumentError('Argument \'entityTypes\' must not be null.');
     }
 
     if (entityTypes is! Iterable) {
-      throw new ArgumentError('Argument \'entityTypes\' should be a list of Entity classes.');
+      throw new ArgumentError('Argument \'entityTypes\' should be a list of Entity type.');
     }
 
-    entityTypes.forEach(addEntity);
+    if (entityTypes.any((et) => et is! Type || !reflectType(et).isSubtypeOf(reflectType(Entity)))) {
+      throw new ArgumentError('Argument \'entityTypes\' should be a list of Entity type.');
+    }
+
+    var count = 0;
+
+    entityTypes.forEach((et) {
+        if (this._addEntityResource(et)) {
+          count++;
+        }
+      });
+
+    return count;
   }
 
-  void addEntity(Type entityType) {
+  int addEntity(Type entityType) {
     if (entityType == null) {
       throw new ArgumentError('Argument \'entityType\' must not be null.');
     }
@@ -64,9 +98,14 @@ class Avocadorm {
       throw new ArgumentError('Argument \'entityType\' should be an Entity class.');
     }
 
-    this._resources.add(new Resource(entityType));
+    return this._addEntityResource(entityType) ? 1 : 0;
   }
 
+  bool _addEntityResource(Type entityType) {
+    this._resources.add(new Resource(entityType));
+
+    return true;
+  }
 
   Future<Object> create(Entity entity) {
     if (entity == null) {
