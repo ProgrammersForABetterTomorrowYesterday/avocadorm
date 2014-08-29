@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:mirrors';
 import 'package:magnetfruit_entity/entity.dart';
 
+part 'avocadorm_exception.dart';
 part 'database_handler/database_handler.dart';
 part 'database_handler/filter.dart';
 part 'property/foreign_key_property.dart';
@@ -105,7 +106,7 @@ class Avocadorm {
     return this._create(entityType, data);
   }
 
-  Future<int> count(Type entityType, [Object primaryKeyValue]) {
+  Future<bool> hasId(Type entityType, Object primaryKeyValue) {
     if (entityType == null) {
       throw new ArgumentError('Argument \'entityType\' must not be null.');
     }
@@ -114,13 +115,30 @@ class Avocadorm {
       throw new ArgumentError('Argument \'entityType\' should be an Entity.');
     }
 
+    if (primaryKeyValue == null) {
+      throw new ArgumentError('Argument \'primaryKeyValue\' must not be null.');
+    }
+
     if (primaryKeyValue != null && primaryKeyValue is! num && primaryKeyValue is! String) {
       throw new ArgumentError('Argument \'primaryKeyValue\' should be a value type.');
     }
 
     var resource = this._getResource(entityType),
         pkColumn = resource.primaryKeyProperty.columnName,
-        filters = primaryKeyValue != null ? [new Filter(pkColumn, primaryKeyValue)] : null;
+        filters = [new Filter(pkColumn, primaryKeyValue)];
+
+    return this._count(entityType, filters: filters)
+      .then((count) => count > 0);
+  }
+
+  Future<int> count(Type entityType, [List<Filter> filters]) {
+    if (entityType == null) {
+      throw new ArgumentError('Argument \'entityType\' must not be null.');
+    }
+
+    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
+      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
+    }
 
     return this._count(entityType, filters: filters);
   }
@@ -281,12 +299,19 @@ class Avocadorm {
         pkColumn = resource.primaryKeyProperty.columnName,
         columns = resource.simpleProperties.map((p) => p.columnName).toList();
 
-    return this._databaseHandler.create(resource.tableName, pkColumn, columns, data)
-      .then((pkValue) {
-        this._saveForeignKeys(entityType, data);
-        return pkValue;
+    return this._count(entityType, filters: [new Filter(pkColumn, data[pkColumn])])
+      .then((count) {
+        if (count > 0) {
+          throw new AvocadormException('Can not create entity - primary key value is already in the database.');
+        }
+
+        return this._databaseHandler.create(resource.tableName, pkColumn, columns, data)
+          .then((pkValue) {
+            this._saveForeignKeys(entityType, data);
+            return pkValue;
+          });
       });
-  }
+}
 
   Future<int> _count(Type entityType, {List<Filter> filters}) {
     var resource = this._getResource(entityType);

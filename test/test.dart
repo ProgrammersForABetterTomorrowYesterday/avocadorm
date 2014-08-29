@@ -110,6 +110,19 @@ void main() {
 
     });
 
+    test('Invalid creation when id already in database', () {
+      var entity = new EntityA()
+            ..entityAId = 2
+            ..name = 'Conflict!'
+            ..entityBId = null;
+
+      expect(
+        avocadorm.create(entity),
+        throwsA(new isInstanceOf<AvocadormException>()),
+        reason: 'Creating an entity already in the database should throw an exception.');
+
+    });
+
     test('Invalid usages when creating with an entity', () {
 
       expect(
@@ -143,6 +156,132 @@ void main() {
 
       expect(
           () => avocadorm.createFromMap(EntityA, 'Invalid Type'),
+          throwsArgumentError,
+          reason: 'An entity map of an invalid type should throw an exception.');
+
+    });
+
+  });
+
+  group('Counting entities', () {
+
+    var avocadorm;
+
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm(new MockDatabaseHandler());
+
+      avocadorm.addEntities([EntityA, EntityB]);
+    });
+
+    test('Normal count of entities', () {
+
+      avocadorm.count(EntityA).then(expectAsync((count) {
+
+        expect(
+            count,
+            equals(5),
+            reason: 'The count() method should have found 5 EntityA entities.');
+
+      }));
+
+      avocadorm.count(EntityB).then(expectAsync((count) {
+
+        expect(
+            count,
+            equals(6),
+            reason: 'The count() method should have found 6 EntityB entities.');
+
+      }));
+
+    });
+
+    test('Normal count of entities by primary key value', () {
+
+      avocadorm.hasId(EntityA, 2).then(expectAsync((isFound) {
+
+        expect(
+            isFound,
+            isTrue,
+            reason: 'The hasId() method should have found 1 EntityA entity for the primary key value 2.');
+
+      }));
+
+      avocadorm.hasId(EntityB, 20).then(expectAsync((isFound) {
+
+        expect(
+            isFound,
+            isFalse,
+            reason: 'The hasId() method should not have found any EntityB entity for the primary key value 20.');
+
+      }));
+
+    });
+
+    test('Normal count of entities by filter', () {
+
+      avocadorm.count(EntityA, [new Filter('entity_b_id', 2)]).then(expectAsync((count) {
+
+        expect(
+            count,
+            equals(2),
+            reason: 'The count() method should have found 2 EntityA entities with the property \'entity_b_id\' equal to 2.');
+
+      }));
+
+      avocadorm.count(EntityB, [new Filter('name', 'Fourth EntityB')]).then(expectAsync((count) {
+
+        expect(
+            count,
+            equals(1),
+            reason: 'The count() method should have found 1 EntityB entity with the property \'name\' equal to \'Fourth EntityB\'.');
+
+      }));
+
+      avocadorm.count(EntityA, [new Filter('name', 'Not Found')]).then(expectAsync((count) {
+
+        expect(
+            count,
+            equals(0),
+            reason: 'The count() method should not have found any EntityA entity with the property \'name\' equal to \'Not Found\'.');
+
+      }));
+
+    });
+
+    test('Invalid usages when counting entities', () {
+
+      expect(
+          () => avocadorm.count(null),
+          throwsArgumentError,
+          reason: 'A null entity should throw an exception.');
+
+      expect(
+          () => avocadorm.count('Invalid Type'),
+          throwsArgumentError,
+          reason: 'An entity of an invalid type should throw an exception.');
+
+    });
+
+    test('Invalid usages when counting entities by primary key value', () {
+
+      expect(
+          () => avocadorm.hasId(null, 0),
+          throwsArgumentError,
+          reason: 'A null entity type should throw an exception.');
+
+      expect(
+          () => avocadorm.hasId('Invalid Type', 0),
+          throwsArgumentError,
+          reason: 'An entity type of an invalid type should throw an exception.');
+
+      expect(
+          () => avocadorm.hasId(EntityA, null),
+          throwsArgumentError,
+          reason: 'A null entity map should throw an exception.');
+
+      expect(
+          () => avocadorm.hasId(EntityA, {}),
           throwsArgumentError,
           reason: 'An entity map of an invalid type should throw an exception.');
 
@@ -245,6 +384,15 @@ void main() {
             entity.entityAs,
             isNull,
             reason: 'The EntityB that was read has the wrong foreign key value (shoud be null, since no foreignKey was asked for).');
+
+      }));
+
+      avocadorm.readById(EntityB, 20).then(expectAsync((entity) {
+
+        expect(
+            entity,
+            isNull,
+            reason: 'The readById() method should return null if the entity does not exist in the database.');
 
       }));
 

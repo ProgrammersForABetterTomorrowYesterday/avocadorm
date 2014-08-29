@@ -12,6 +12,16 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
     return new Future.value(data[pkColumn]);
   }
 
+  Future<int> count(String table, [List<Filter> filters]) {
+    var entities = _entityRepository[table];
+
+    if (filters != null) {
+      entities = entities.where((e) => filters.every((f) => e[f.column] == f.value));
+    }
+
+    return new Future.value(entities.length);
+  }
+
   Future<List<Map>> read(String table, List<String> columns, [List<Filter> filters, int limit]) {
     var entities = _entityRepository[table];
 
