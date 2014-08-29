@@ -79,9 +79,19 @@ class Avocadorm {
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
-        data = this._convertFromEntity(entity);
+        pkColumn = resource.primaryKeyProperty.columnName,
+        data = this._convertFromEntity(entity),
+        filters = [new Filter(pkColumn, data[pkColumn])];
 
-    return this._create(resource, data);
+    data[pkColumn] = null;
+
+    return this._count(resource, filters: filters).then((count) {
+      if (count > 0) {
+        throw new AvocadormException('Can not create entity - primary key value is already in the database.');
+      }
+
+      return this._create(resource, data);
+    });
   }
 
   Future<Object> createFromMap(Type entityType, Map entityMap) {
@@ -102,9 +112,19 @@ class Avocadorm {
     }
 
     var resource = this._getResource(entityType),
-        data = this._convertFromEntityMap(entityMap, resource);
+        pkColumn = resource.primaryKeyProperty.columnName,
+        data = this._convertFromEntityMap(entityMap, resource),
+        filters = [new Filter(pkColumn, data[pkColumn])];
 
-    return this._create(resource, data);
+    data[pkColumn] = null;
+
+    return this._count(resource, filters: filters).then((count) {
+      if (count > 0) {
+        throw new AvocadormException('Can not create entity - primary key value is already in the database.');
+      }
+
+      return this._create(resource, data);
+    });
   }
 
   Future<bool> hasId(Type entityType, Object primaryKeyValue) {
@@ -196,9 +216,17 @@ class Avocadorm {
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
-        data = this._convertFromEntity(entity);
+        pkColumn = resource.primaryKeyProperty.columnName,
+        data = this._convertFromEntity(entity),
+        filters = [new Filter(pkColumn, data[pkColumn])];
 
-    return this._update(resource, data);
+    return this._count(resource, filters: filters).then((count) {
+      if (count == 0) {
+        throw new AvocadormException('Can not update entity - primary key value is not in the database.');
+      }
+
+      return this._update(resource, data);
+    });
   }
 
   Future<Object> updateFromMap(Type entityType, Map entityMap) {
@@ -219,9 +247,17 @@ class Avocadorm {
     }
 
     var resource = this._getResource(entityType),
-        data = this._convertFromEntityMap(entityMap, resource);
+        pkColumn = resource.primaryKeyProperty.columnName,
+        data = this._convertFromEntityMap(entityMap, resource),
+        filters = [new Filter(pkColumn, data[pkColumn])];
 
-    return this._update(resource, data);
+    return this._count(resource, filters: filters).then((count) {
+      if (count == 0) {
+        throw new AvocadormException('Can not update entity - primary key value is not in the database.');
+      }
+
+      return this._update(resource, data);
+    });
   }
 
   Future<Object> save(Entity entity) {
@@ -235,9 +271,18 @@ class Avocadorm {
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
-        data = this._convertFromEntity(entity);
+        pkColumn = resource.primaryKeyProperty.columnName,
+        data = this._convertFromEntity(entity),
+        filters = [new Filter(pkColumn, data[pkColumn])];
 
-    return this._update(resource, data);
+    return this._count(resource, filters: filters).then((count) {
+      if (count == 0) {
+        return this._create(resource, data);
+      }
+      else {
+        return this._update(resource, data);
+      }
+    });
   }
 
   Future<Object> saveFromMap(Type entityType, Map entityMap) {
@@ -258,9 +303,18 @@ class Avocadorm {
     }
 
     var resource = this._getResource(entityType),
-        data = this._convertFromEntityMap(entityMap, resource);
+        pkColumn = resource.primaryKeyProperty.columnName,
+        data = this._convertFromEntityMap(entityMap, resource),
+        filters = [new Filter(pkColumn, data[pkColumn])];
 
-    return this._update(resource, data);
+    return this._count(resource, filters: filters).then((count) {
+      if (count == 0) {
+        return this._create(resource, data);
+      }
+      else {
+        return this._update(resource, data);
+      }
+    });
   }
 
   Future delete(Entity entity) {
@@ -274,10 +328,18 @@ class Avocadorm {
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.name,
-        pkValue = reflect(entity).getField(new Symbol(pkColumn)).reflectee;
+        pk = resource.primaryKeyProperty,
+        pkValue = reflect(entity).getField(new Symbol(pk.name)).reflectee,
+        filters = [new Filter(pk.columnName, pkValue)];
 
-    return this._delete(resource, pkValue);
+    return this._count(resource, filters: filters).then((count) {
+      if (count == 0) {
+        throw new AvocadormException('Can not delete entity - primary key value is not in the database.');
+      }
+
+      return this._delete(resource, pkValue);
+    });
+
   }
 
   Future deleteById(Type entityType, Object primaryKeyValue) {
@@ -297,9 +359,18 @@ class Avocadorm {
       throw new ArgumentError('Argument \'primaryKeyValue\' should be a value type.');
     }
 
-    var resource = this._getResource(entityType);
+    var resource = this._getResource(entityType),
+        pkColumn = resource.primaryKeyProperty.columnName,
+        filters = [new Filter(pkColumn, primaryKeyValue)];
 
-    return this._delete(resource, primaryKeyValue);
+    return this._count(resource, filters: filters).then((count) {
+      if (count == 0) {
+        throw new AvocadormException('Can not delete entity - primary key value is not in the database.');
+      }
+
+      return this._delete(resource, primaryKeyValue);
+    });
+
   }
 
 
@@ -307,17 +378,10 @@ class Avocadorm {
     var pkColumn = resource.primaryKeyProperty.columnName,
         columns = resource.simpleProperties.map((p) => p.columnName).toList();
 
-    return this._count(resource, filters: [new Filter(pkColumn, data[pkColumn])])
-      .then((count) {
-        if (count > 0) {
-          throw new AvocadormException('Can not create entity - primary key value is already in the database.');
-        }
-
-        return this._databaseHandler.create(resource.tableName, pkColumn, columns, data)
-          .then((pkValue) {
-            this._saveForeignKeys(resource, data);
-            return pkValue;
-          });
+    return this._databaseHandler.create(resource.tableName, pkColumn, columns, data)
+      .then((pkValue) {
+        this._saveForeignKeys(resource, data);
+        return pkValue;
       });
 }
 

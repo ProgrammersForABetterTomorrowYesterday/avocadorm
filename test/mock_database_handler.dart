@@ -3,13 +3,22 @@ part of avocadorm_test;
 class MockDatabaseHandler extends Mock implements DatabaseHandler {
 
   Future<Object> create(String table, String pkColumn, List<String> columns, Map data) {
-    var entities = _entityRepository[table];
+    var entities = _entityRepository[table],
+        newEntity = {};
 
-    data[pkColumn] = entities.map((e) => e[pkColumn]).reduce(max) + 1;
+    newEntity[pkColumn] = data[pkColumn];
 
-    entities.add(data);
+    columns.forEach((c) {
+      newEntity[c] = data[c];
+    });
 
-    return new Future.value(data[pkColumn]);
+    if (newEntity[pkColumn] == null) {
+      newEntity[pkColumn] = entities.map((e) => e[pkColumn]).reduce(max) + 1;
+    }
+
+    entities.add(newEntity);
+
+    return new Future.value(newEntity[pkColumn]);
   }
 
   Future<int> count(String table, [List<Filter> filters]) {
@@ -37,17 +46,20 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
   }
 
   Future<Object> update(String table, String pkColumn, List<String> columns, Map data) {
-    var entities = _entityRepository[table];
+    var entities = _entityRepository[table],
+        newEntity = {};
 
-    if (!data.containsKey(pkColumn) || data[pkColumn] == null) {
-      return this.create(table, pkColumn, column, data);
-    }
+    newEntity[pkColumn] = data[pkColumn];
+
+    columns.forEach((c) {
+      newEntity[c] = data[c];
+    });
 
     entities
-      ..removeWhere((e) => e[pkColumn] == data[pkColumn])
-      ..add(data);
+      ..removeWhere((e) => e[pkColumn] == newEntity[pkColumn])
+      ..add(newEntity);
 
-    return new Future.value(data[pkColumn]);
+    return new Future.value(newEntity[pkColumn]);
   }
 
   Future delete(String table, [List<Filter> filters]) {

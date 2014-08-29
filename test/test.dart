@@ -508,7 +508,7 @@ void main() {
 
     test('Normal update with an entity', () {
 
-      var entityId = 12,
+      var entityId = 3,
           entityName = 'Entity!',
           entity = new EntityA()
             ..entityAId = entityId
@@ -542,7 +542,7 @@ void main() {
 
     test('Normal update with an entity map', () {
 
-      var entityId = 12,
+      var entityId = 3,
           entityName = 'Entity!',
           entityMap = { 'entityAId': entityId, 'name': entityName, 'entityBId': null };
 
@@ -568,6 +568,19 @@ void main() {
         }));
 
       }));
+
+    });
+
+    test('Invalid update when id not in database', () {
+      var entity = new EntityA()
+          ..entityAId = 20
+          ..name = 'Not found!'
+          ..entityBId = null;
+
+      expect(
+          avocadorm.update(entity),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Updating an entity not in the database should throw an exception.');
 
     });
 
@@ -687,6 +700,24 @@ void main() {
 
     });
 
+    test('Valid save when id not in database', () {
+      var entityId = 20,
+          entity = new EntityA()
+          ..entityAId = entityId
+          ..name = 'Not found!'
+          ..entityBId = null;
+
+      avocadorm.save(entity).then(expectAsync((id) {
+
+        expect(
+            id,
+            equals(entityId),
+            reason: 'The save() method should not change the entity id.');
+
+      }));
+
+    });
+
     test('Invalid usages when saving with an entity', () {
 
       expect(
@@ -738,7 +769,7 @@ void main() {
       avocadorm.addEntities([EntityA, EntityB]);
     });
 
-    test('Normal creation with an entity', () {
+    test('Normal deletion with an entity', () {
 
       var entityId = 2,
           entity = new EntityA()
@@ -761,7 +792,7 @@ void main() {
 
     });
 
-    test('Normal creation with an id', () {
+    test('Normal deletion with an id', () {
 
       var entityId = 2;
 
@@ -780,39 +811,52 @@ void main() {
 
     });
 
-    test('Invalid usages when creating with an entity', () {
+    test('Invalid deletion when id not in database', () {
+      var entity = new EntityA()
+          ..entityAId = 20
+          ..name = 'Not found!'
+          ..entityBId = null;
 
       expect(
-          () => avocadorm.create(null),
+          avocadorm.delete(entity),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Deleting an entity not in the database should throw an exception.');
+
+    });
+
+    test('Invalid usages when deleting with an entity', () {
+
+      expect(
+          () => avocadorm.delete(null),
           throwsArgumentError,
           reason: 'A null entity should throw an exception.');
 
       expect(
-          () => avocadorm.create('Invalid Type'),
+          () => avocadorm.delete('Invalid Type'),
           throwsArgumentError,
           reason: 'An entity of an invalid type should throw an exception.');
 
     });
 
-    test('Invalid usages when creating with an entity map', () {
+    test('Invalid usages when deleting with an entity map', () {
 
       expect(
-          () => avocadorm.readById(null, 0),
+          () => avocadorm.deleteById(null, 0),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
 
       expect(
-          () => avocadorm.readById('Invalid Type', 0),
+          () => avocadorm.deleteById('Invalid Type', 0),
           throwsArgumentError,
           reason: 'An entity type of an invalid type should throw an exception.');
 
       expect(
-          () => avocadorm.readById(EntityA, null),
+          () => avocadorm.deleteById(EntityA, null),
           throwsArgumentError,
           reason: 'A null primary key value should throw an exception.');
 
       expect(
-          () => avocadorm.readById(EntityA, {}),
+          () => avocadorm.deleteById(EntityA, {}),
           throwsArgumentError,
           reason: 'A primary key value that is not of a value type should throw an exception.');
 

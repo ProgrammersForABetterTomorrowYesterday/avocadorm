@@ -11,6 +11,8 @@ class MySqlDatabaseHandler extends DatabaseHandler {
   }
 
   Future<Object> create(String table, String pkColumn, List<String> columns, Map data) {
+    columns.insert(0, pkColumn);
+
     var cols = columns.map((c) => '`${c}`'),
         values = columns.map((c) => _objToString(data[c]));
 
