@@ -45,7 +45,7 @@ class Avocadorm {
 
     try {
       lib = currentMirrorSystem().findLibrary(new Symbol(libraryName));
-    } on StateError {
+    } catch(e) {
       throw new ArgumentError('Argument \'libraryName\' must designate a valid library name.');
     }
 
