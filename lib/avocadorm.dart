@@ -522,7 +522,22 @@ class Avocadorm {
     resource.foreignKeyProperties
       .where((fk) => fk.onUpdateOperation == ReferentialAction.CASCADE)
       .where((fk) => data[fk.name] != null)
-      .forEach((fk) => futures.add(this._update(this._getResource(fk.type), data[fk.name])));
+      .forEach((fk) {
+        var fkResource = this._getResource(fk.type),
+            fkPk = fkResource.primaryKeyProperty,
+            fkData = data[fk.name],
+            filters = [new Filter(fkPk.columnName, fkData[fkPk.name])];
+
+        var future = this._count(fkResource, filters: filters).then((count) {
+          if (count == 0) {
+            return this._create(fkResource, fkData);
+          } else {
+            return this._update(fkResource, fkData);
+          }
+        });
+
+        futures.add(future);
+      });
 
     return Future.wait(futures);
   }
