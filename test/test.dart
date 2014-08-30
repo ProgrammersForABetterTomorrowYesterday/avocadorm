@@ -795,7 +795,7 @@ void main() {
 
     });
 
-    skip_test('Normal save with new m2o foreign key', () {
+    test('Normal save with new m2o foreign key', () {
 
       var entityAId = 3,
           entityBId = 10,
@@ -831,7 +831,39 @@ void main() {
 
     test('Normal save with new o2m foreign keys', () { });
 
-    test('Normal save with existing m2o foreign key', () { });
+    test('Normal save with existing m2o foreign key', () {
+
+      var entityAId = 3,
+          entityBId = 4,
+          entityBName = 'New EntityB',
+          entityB = new EntityB()
+            ..entityBId = entityBId
+            ..name = entityBName,
+          entity = new EntityA()
+            ..entityAId = entityAId
+            ..name = 'EntityA'
+            ..entityBId = entityBId
+            ..entityB = entityB;
+
+      avocadorm.save(entity).then(expectAsync((id) {
+
+        avocadorm.readById(EntityB, entityBId).then(expectAsync((entityB) {
+
+          expect(
+              entityB,
+              isNotNull,
+              reason: 'Updated foreign key entity should be retrievable, but was not found.');
+
+          expect(
+              entityB.name,
+              equals(entityBName),
+              reason: 'Updated foreign key entity should have the name that was given.');
+
+        }));
+
+      }));
+
+    });
 
     test('Normal save with existing o2m foreign keys', () { });
 

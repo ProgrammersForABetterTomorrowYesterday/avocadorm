@@ -107,6 +107,7 @@ class Avocadorm {
     return true;
   }
 
+
   Future<Object> create(Entity entity) {
     if (entity == null) {
       throw new ArgumentError('Argument \'entity\' must not be null.');
@@ -118,11 +119,11 @@ class Avocadorm {
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName,
+        pk = resource.primaryKeyProperty,
         data = this._convertFromEntity(entity),
-        filters = [new Filter(pkColumn, data[pkColumn])];
+        filters = [new Filter(pk.columnName, data[pk.name])];
 
-    data[pkColumn] = null;
+    data[pk.name] = null;
 
     return this._count(resource, filters: filters).then((count) {
       if (count > 0) {
@@ -133,7 +134,7 @@ class Avocadorm {
     });
   }
 
-  Future<Object> createFromMap(Type entityType, Map entityMap) {
+  Future<Object> createFromMap(Type entityType, Map data) {
     if (entityType == null) {
       throw new ArgumentError('Argument \'entityType\' must not be null.');
     }
@@ -142,20 +143,19 @@ class Avocadorm {
       throw new ArgumentError('Argument \'entityType\' should be an Entity.');
     }
 
-    if (entityMap == null) {
-      throw new ArgumentError('Argument \'entityMap\' must not be null.');
+    if (data == null) {
+      throw new ArgumentError('Argument \'data\' must not be null.');
     }
 
-    if (entityMap is! Map) {
-      throw new ArgumentError('Argument \'entityMap\' should be a Map.');
+    if (data is! Map) {
+      throw new ArgumentError('Argument \'data\' should be a Map.');
     }
 
     var resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName,
-        data = this._convertFromEntityMap(entityMap, resource),
-        filters = [new Filter(pkColumn, data[pkColumn])];
+        pk = resource.primaryKeyProperty,
+        filters = [new Filter(pk.columnName, data[pk.name])];
 
-    data[pkColumn] = null;
+    data[pk.name] = null;
 
     return this._count(resource, filters: filters).then((count) {
       if (count > 0) {
@@ -255,9 +255,9 @@ class Avocadorm {
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName,
+        pk = resource.primaryKeyProperty,
         data = this._convertFromEntity(entity),
-        filters = [new Filter(pkColumn, data[pkColumn])];
+        filters = [new Filter(pk.columnName, data[pk.name])];
 
     return this._count(resource, filters: filters).then((count) {
       if (count == 0) {
@@ -268,7 +268,7 @@ class Avocadorm {
     });
   }
 
-  Future<Object> updateFromMap(Type entityType, Map entityMap) {
+  Future<Object> updateFromMap(Type entityType, Map data) {
     if (entityType == null) {
       throw new ArgumentError('Argument \'entityType\' must not be null.');
     }
@@ -277,18 +277,17 @@ class Avocadorm {
       throw new ArgumentError('Argument \'entityType\' should be an Entity.');
     }
 
-    if (entityMap == null) {
-      throw new ArgumentError('Argument \'entityMap\' must not be null.');
+    if (data == null) {
+      throw new ArgumentError('Argument \'data\' must not be null.');
     }
 
-    if (entityMap is! Map) {
-      throw new ArgumentError('Argument \'entityMap\' should be a Map.');
+    if (data is! Map) {
+      throw new ArgumentError('Argument \'data\' should be a Map.');
     }
 
     var resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName,
-        data = this._convertFromEntityMap(entityMap, resource),
-        filters = [new Filter(pkColumn, data[pkColumn])];
+        pk = resource.primaryKeyProperty,
+        filters = [new Filter(pk.columnName, data[pk.name])];
 
     return this._count(resource, filters: filters).then((count) {
       if (count == 0) {
@@ -310,9 +309,9 @@ class Avocadorm {
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName,
+        pk = resource.primaryKeyProperty,
         data = this._convertFromEntity(entity),
-        filters = [new Filter(pkColumn, data[pkColumn])];
+        filters = [new Filter(pk.columnName, data[pk.name])];
 
     return this._count(resource, filters: filters).then((count) {
       if (count == 0) {
@@ -324,7 +323,7 @@ class Avocadorm {
     });
   }
 
-  Future<Object> saveFromMap(Type entityType, Map entityMap) {
+  Future<Object> saveFromMap(Type entityType, Map data) {
     if (entityType == null) {
       throw new ArgumentError('Argument \'entityType\' must not be null.');
     }
@@ -333,18 +332,17 @@ class Avocadorm {
       throw new ArgumentError('Argument \'entityType\' should be an Entity.');
     }
 
-    if (entityMap == null) {
-      throw new ArgumentError('Argument \'entityMap\' must not be null.');
+    if (data == null) {
+      throw new ArgumentError('Argument \'data\' must not be null.');
     }
 
-    if (entityMap is! Map) {
-      throw new ArgumentError('Argument \'entityMap\' should be a Map.');
+    if (data is! Map) {
+      throw new ArgumentError('Argument \'data\' should be a Map.');
     }
 
     var resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName,
-        data = this._convertFromEntityMap(entityMap, resource),
-        filters = [new Filter(pkColumn, data[pkColumn])];
+        pk = resource.primaryKeyProperty,
+        filters = [new Filter(pk.columnName, data[pk.name])];
 
     return this._count(resource, filters: filters).then((count) {
       if (count == 0) {
@@ -415,9 +413,10 @@ class Avocadorm {
 
   Future<Object> _create(Resource resource, Map data) {
     var pkColumn = resource.primaryKeyProperty.columnName,
-        columns = resource.simpleProperties.map((p) => p.columnName).toList();
+        columns = resource.simpleProperties.map((p) => p.columnName).toList(),
+        dbData = this._convertDataToDatabaseData(data, resource);
 
-    return this._databaseHandler.create(resource.tableName, pkColumn, columns, data)
+    return this._databaseHandler.create(resource.tableName, pkColumn, columns, dbData)
       .then((pkValue) {
         this._saveForeignKeys(resource, data);
         return pkValue;
@@ -438,9 +437,10 @@ class Avocadorm {
 
   Future<Object> _update(Resource resource, Map data) {
     var pkColumn = resource.primaryKeyProperty.columnName,
-        columns = resource.simpleProperties.map((p) => p.columnName).toList();
+        columns = resource.simpleProperties.map((p) => p.columnName).toList(),
+        dbData = this._convertDataToDatabaseData(data, resource);
 
-    return this._databaseHandler.update(resource.tableName, pkColumn, columns, data)
+    return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData)
       .then((pkValue) {
         this._saveForeignKeys(resource, data);
         return pkValue;
@@ -552,13 +552,25 @@ class Avocadorm {
         entityMirror = reflect(entity);
 
     resource.simpleAndPrimaryKeyProperties.forEach((p) {
-      map[p.columnName] = entityMirror.getField(new Symbol(p.name)).reflectee;
+      map[p.name] = entityMirror.getField(new Symbol(p.name)).reflectee;
+    });
+
+    resource.foreignKeyProperties.forEach((fk) {
+      var fkValue = entityMirror.getField(new Symbol(fk.name)).reflectee;
+
+      if (fkValue != null) {
+        if (fk.isManyToOne) {
+          map[fk.name] = this._convertFromEntity(fkValue);
+        } else if (fk.isOneToMany) {
+          map[fk.name] = fkValue.map((v) => this._convertFromEntity(v));
+        }
+      }
     });
 
     return map;
   }
 
-  Map _convertFromEntityMap(Map data, Resource resource) {
+  Map _convertDataToDatabaseData(Map data, Resource resource) {
     if (data == null) {
       return null;
     }
