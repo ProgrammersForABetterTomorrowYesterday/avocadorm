@@ -1102,6 +1102,25 @@ void main() {
 
     });
 
+    test('Normal deletion with an entity map', () {
+
+      var entityMap = {'entityAId': 2, 'name': 'test'};
+
+      avocadorm.deleteFromMap(EntityA, entityMap).then(expectAsync((r) {
+
+        avocadorm.readById(EntityA, entityMap['entityAId']).then(expectAsync((entityA) {
+
+          expect(
+              entityA,
+              isNull,
+              reason: 'Deleted entity should not be readable.');
+
+        }));
+
+      }));
+
+    });
+
     test('Normal deletion with an id', () {
 
       var entityId = 2;
@@ -1149,6 +1168,30 @@ void main() {
     });
 
     test('Invalid usages when deleting with an entity map', () {
+
+      expect(
+          () => avocadorm.deleteFromMap(null, 0),
+          throwsArgumentError,
+          reason: 'A null entity type should throw an exception.');
+
+      expect(
+          () => avocadorm.deleteFromMap('Invalid Type', 0),
+          throwsArgumentError,
+          reason: 'An entity type of an invalid type should throw an exception.');
+
+      expect(
+          () => avocadorm.deleteFromMap(EntityA, null),
+          throwsArgumentError,
+          reason: 'A null entity map should throw an exception.');
+
+      expect(
+          () => avocadorm.deleteFromMap(EntityA, 'Invalid type'),
+          throwsArgumentError,
+          reason: 'An entity map that is not a map should throw an exception.');
+
+    });
+
+    test('Invalid usages when deleting with an id', () {
 
       expect(
           () => avocadorm.deleteById(null, 0),

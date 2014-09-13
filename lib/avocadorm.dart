@@ -374,9 +374,39 @@ class Avocadorm {
         throw new AvocadormException('Can not delete entity - primary key value is not in the database.');
       }
 
-      return this._delete(resource, pkValue);
+      return this._delete(resource, this._convertFromEntity(entity));
     });
 
+  }
+
+  Future deleteFromMap(Type entityType, Map data) {
+    if (entityType == null) {
+      throw new ArgumentError('Argument \'entityType\' must not be null.');
+    }
+
+    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
+      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
+    }
+
+    if (data == null) {
+      throw new ArgumentError('Argument \'data\' must not be null.');
+    }
+
+    if (data is! Map) {
+      throw new ArgumentError('Argument \'data\' should be a Map.');
+    }
+
+    var resource = this._getResource(entityType),
+        pk = resource.primaryKeyProperty,
+        filters = [new Filter(pk.columnName, data[pk.name])];
+
+    return this._count(resource, filters: filters).then((count) {
+      if (count == 0) {
+        throw new AvocadormException('Can not delete entity - primary key value is not in the database.');
+      }
+
+      return this._delete(resource, data);
+    });
   }
 
   Future deleteById(Type entityType, Object primaryKeyValue) {
@@ -400,14 +430,13 @@ class Avocadorm {
         pkColumn = resource.primaryKeyProperty.columnName,
         filters = [new Filter(pkColumn, primaryKeyValue)];
 
-    return this._count(resource, filters: filters).then((count) {
-      if (count == 0) {
+    return this._read(resource, filters: filters).then((entities) {
+      if (entities.length == 0) {
         throw new AvocadormException('Can not delete entity - primary key value is not in the database.');
       }
 
-      return this._delete(resource, primaryKeyValue);
+      return this._delete(resource, this._convertFromEntity(entities.first));
     });
-
   }
 
 
@@ -456,9 +485,13 @@ class Avocadorm {
       });
   }
 
-  Future _delete(Resource resource, Object pkValue) {
-    var pkColumn = resource.primaryKeyProperty.columnName,
+  Future _delete(Resource resource, Map data) {
+    var pk = resource.primaryKeyProperty,
+        pkColumn = pk.columnName,
+        pkValue = data[pk.name],
         filters = [new Filter(pkColumn, pkValue)];
+
+
 
     return this._databaseHandler.delete(resource.tableName, filters);
   }
@@ -570,6 +603,10 @@ class Avocadorm {
       });
 
     return Future.wait(futures);
+  }
+
+  Future _deleteForeignKeys(Resource resource, Map data) {
+
   }
 
 
