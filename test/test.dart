@@ -297,7 +297,7 @@ void main() {
 
     test('Normal count of entities by filter', () {
 
-      avocadorm.count(EntityA, [new Filter('entity_b_id', 2)]).then(expectAsync((count) {
+      avocadorm.count(EntityA, filters: [new Filter('entity_b_id', 2)]).then(expectAsync((count) {
 
         expect(
             count,
@@ -306,7 +306,7 @@ void main() {
 
       }));
 
-      avocadorm.count(EntityB, [new Filter('name', 'Fourth EntityB')]).then(expectAsync((count) {
+      avocadorm.count(EntityB, filters: [new Filter('name', 'Fourth EntityB')]).then(expectAsync((count) {
 
         expect(
             count,
@@ -315,7 +315,7 @@ void main() {
 
       }));
 
-      avocadorm.count(EntityA, [new Filter('name', 'Not Found')]).then(expectAsync((count) {
+      avocadorm.count(EntityA, filters: [new Filter('name', 'Not Found')]).then(expectAsync((count) {
 
         expect(
             count,
@@ -829,7 +829,41 @@ void main() {
 
     });
 
-    test('Normal save with new o2m foreign keys', () { });
+    test('Normal save with new o2m foreign keys', () {
+
+      var entityA_1 = new EntityA()
+            ..name = 'First New EntityA',
+          entityA_2 = new EntityA()
+            ..name = 'Second New EntityA',
+          entity = new EntityB()
+            ..entityBId = 20
+            ..name = 'EntityB'
+            ..entityAs = [entityA_1, entityA_2];
+
+      avocadorm.save(entity).then(expectAsync((id) {
+
+        avocadorm.readById(EntityB, id, foreignKeys: ['entityAs']).then(expectAsync((entityB) {
+
+          expect(
+              entityB.entityAs.length,
+              equals(2),
+              reason: 'Created One-to-Many foreign keys should be retrieved with the entity.');
+
+          expect(
+              entityB.entityAs[0].name,
+              equals(entityA_1.name),
+              reason: 'Created foreign key entity should have the name that was given.');
+
+          expect(
+              entityB.entityAs[1].name,
+              equals(entityA_2.name),
+              reason: 'Created foreign key entity should have the name that was given.');
+
+        }));
+
+      }));
+
+    });
 
     test('Normal save with existing m2o foreign key', () {
 
@@ -865,10 +899,134 @@ void main() {
 
     });
 
-    test('Normal save with existing o2m foreign keys', () { });
+    test('Normal save with existing o2m foreign keys', () {
 
-    // Id of foreign key is set on original entity.
-    test('Normal save with conflicting foreign key id', () { });
+      var entityA_1 = new EntityA()
+            ..entityAId = 1
+            ..name = 'First New EntityA',
+          entityA_2 = new EntityA()
+            ..entityAId = 2
+            ..name = 'Second New EntityA',
+          entity = new EntityB()
+            ..name = 'EntityB'
+            ..entityAs = [entityA_1, entityA_2];
+
+      avocadorm.save(entity).then(expectAsync((id) {
+
+        avocadorm.readById(EntityA, entityA_1.entityAId).then(expectAsync((entityA) {
+
+          expect(
+              entityA,
+              isNotNull,
+              reason: 'Updated One-to-Many foreign keys should be retrievable.');
+
+          expect(
+              entityA.name,
+              equals(entityA_1.name),
+              reason: 'Updated foreign key entity should have the name that was specified.');
+
+        }));
+
+        avocadorm.readById(EntityA, entityA_2.entityAId).then(expectAsync((entityA) {
+
+          expect(
+              entityA,
+              isNotNull,
+              reason: 'Updated One-to-Many foreign keys should be retrievable.');
+
+          expect(
+              entityA.name,
+              equals(entityA_2.name),
+              reason: 'Updated foreign key entity should have the name that was specified.');
+
+        }));
+
+      }));
+
+    });
+
+    test('Normal save with conflicting m2o foreign key id', () {
+
+      var entityB = new EntityB()
+            ..entityBId = 15
+            ..name = 'New EntityB',
+          entity = new EntityA()
+            ..entityAId = 3
+            ..name = 'EntityA'
+            ..entityBId = 14
+            ..entityB = entityB;
+
+      avocadorm.save(entity).then(expectAsync((id) {
+
+        avocadorm.readById(EntityB, entity.entityBId).then(expectAsync((entityB) {
+
+          expect(
+              entityB,
+              isNull,
+              reason: 'Foreign key should not have been created under the id specified by the parent entity.');
+
+        }));
+
+        avocadorm.readById(EntityB, entityB.entityBId).then(expectAsync((entityB) {
+
+          expect(
+              entityB,
+              isNotNull,
+              reason: 'Foreign key should have been created under the id specified by itself.');
+
+        }));
+
+        avocadorm.readById(EntityA, entity.entityAId).then(expectAsync((entityA) {
+
+          expect(
+              entityA.entityBId,
+              equals(entityB.entityBId),
+              reason: 'Entity still retains control of its foreign key.');
+
+        }));
+
+      }));
+
+    });
+
+    test('Normal save with conflicting o2m foreign key id', () {
+
+      var entityA_1 = new EntityA()
+            ..entityAId = 14
+            ..entityBId = 15
+            ..name = 'EntityA 1',
+          entityA_2 = new EntityA()
+            ..entityAId = 16
+            ..entityBId = 17
+            ..name = 'EntityA 2',
+          entity = new EntityB()
+            ..entityBId = 10
+            ..name = 'EntityB'
+            ..entityAs = [entityA_1, entityA_2];
+
+      avocadorm.save(entity).then(expectAsync((id) {
+
+        avocadorm.readById(EntityA, entityA_1.entityAId).then(expectAsync((entityA) {
+
+          expect(
+              entityA.entityBId,
+              equals(entity.entityBId),
+              reason: 'Foreign key should have its target id set to the parent entity\'s id.');
+
+        }));
+
+        avocadorm.readById(EntityB, entity.entityBId, foreignKeys: ['entityAs']).then(expectAsync((entityB) {
+
+          expect(
+              entityB.entityAs.length,
+              equals(2),
+              reason: 'Entity still retains control of its foreign key.');
+
+        }));
+
+      }));
+
+    });
 
     test('Invalid usages when saving with an entity', () {
 

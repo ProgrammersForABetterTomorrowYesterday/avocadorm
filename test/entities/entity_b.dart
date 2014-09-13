@@ -9,7 +9,7 @@ class EntityB extends Entity {
   @Column('name')
   String name;
 
-  @Column.OneToManyForeignKey('entityBId')
+  @Column.OneToManyForeignKey('entityBId', onUpdate: ReferentialAction.CASCADE)
   List<EntityA> entityAs;
 
 }

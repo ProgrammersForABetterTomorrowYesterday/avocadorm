@@ -1,8 +1,8 @@
 part of magnetfruit_avocadorm;
 
 class ForeignKeyProperty extends Property {
-  final bool isOneToMany;
   final bool isManyToOne;
+  final bool isOneToMany;
 
   final String targetName;
   final int onUpdateOperation;

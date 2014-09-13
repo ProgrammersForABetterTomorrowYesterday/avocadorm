@@ -191,7 +191,7 @@ class Avocadorm {
       .then((count) => count > 0);
   }
 
-  Future<int> count(Type entityType, [List<Filter> filters]) {
+  Future<int> count(Type entityType, {List<Filter> filters}) {
     if (entityType == null) {
       throw new ArgumentError('Argument \'entityType\' must not be null.');
     }
@@ -420,7 +420,12 @@ class Avocadorm {
       .then((pkValue) {
         this._saveForeignKeys(resource, data);
         return pkValue;
-      });
+      })
+    .then((pkValue) {
+      dbData = this._convertDataToDatabaseData(data, resource);
+      dbData[pkColumn] = pkValue;
+      return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData);
+    });
 }
 
   Future<int> _count(Resource resource, {List<Filter> filters}) {
@@ -444,6 +449,10 @@ class Avocadorm {
       .then((pkValue) {
         this._saveForeignKeys(resource, data);
         return pkValue;
+      })
+      .then((pkValue) {
+        dbData =  this._convertDataToDatabaseData(data, resource);
+        return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData);
       });
   }
 
@@ -525,18 +534,39 @@ class Avocadorm {
       .forEach((fk) {
         var fkResource = this._getResource(fk.type),
             fkPk = fkResource.primaryKeyProperty,
-            fkData = data[fk.name],
-            filters = [new Filter(fkPk.columnName, fkData[fkPk.name])];
+            fkData = data[fk.name];
 
-        var future = this._count(fkResource, filters: filters).then((count) {
-          if (count == 0) {
-            return this._create(fkResource, fkData);
-          } else {
-            return this._update(fkResource, fkData);
-          }
-        });
+        if (fk.isManyToOne) {
+          // Makes sure the parent entity has the foreign key's id up-to-date.
+          data[fk.targetName] = fkData[fk.targetName];
 
-        futures.add(future);
+          var future = this._count(fkResource, filters: [new Filter(fkPk.columnName, fkData[fkPk.name])]).then((count) {
+            if (count == 0) {
+              return this._create(fkResource, fkData);
+            } else {
+              return this._update(fkResource, fkData);
+            }
+          });
+
+          futures.add(future);
+        }
+        else if (fk.isOneToMany) {
+          fkData.forEach((e) {
+            // Makes sure all the foreign keys have their target id correct.
+            e[fk.targetName] = data[resource.primaryKeyProperty.name];
+
+            var future = this._count(fkResource, filters: [new Filter(fkPk.columnName, e[fkPk.name])]).then((count) {
+              if (count == 0) {
+                return this._create(fkResource, e);
+              } else {
+                return this._update(fkResource, e);
+              }
+            });
+
+            futures.add(future);
+          });
+        }
+
       });
 
     return Future.wait(futures);
