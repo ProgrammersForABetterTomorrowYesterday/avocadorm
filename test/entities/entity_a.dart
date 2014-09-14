@@ -12,7 +12,7 @@ class EntityA extends Entity {
   @Column('entity_b_id')
   int entityBId;
 
-  @Column.ManyToOneForeignKey('entityBId', onUpdate: ReferentialAction.CASCADE)
+  @Column.ManyToOneForeignKey('entityBId', onUpdate: ReferentialAction.CASCADE, onDelete: ReferentialAction.CASCADE)
   EntityB entityB;
 
 }

@@ -376,7 +376,6 @@ class Avocadorm {
 
       return this._delete(resource, this._convertFromEntity(entity));
     });
-
   }
 
   Future deleteFromMap(Type entityType, Map data) {
@@ -491,9 +490,8 @@ class Avocadorm {
         pkValue = data[pk.name],
         filters = [new Filter(pkColumn, pkValue)];
 
-
-
-    return this._databaseHandler.delete(resource.tableName, filters);
+    return this._deleteForeignKeys(resource, data)
+      .then((r) => this._databaseHandler.delete(resource.tableName, filters));
   }
 
 
@@ -599,14 +597,56 @@ class Avocadorm {
             futures.add(future);
           });
         }
-
       });
 
     return Future.wait(futures);
   }
 
   Future _deleteForeignKeys(Resource resource, Map data) {
+    var futures = [];
 
+    resource.foreignKeyProperties
+      .where((fk) => fk.onDeleteOperation == ReferentialAction.CASCADE)
+      .forEach((fk) {
+        var fkResource = this._getResource(fk.type),
+            fkPk = fkResource.primaryKeyProperty,
+            fkData = data[fk.name];
+
+        if (fk.isManyToOne && data[fk.targetName] != null) {
+          var future = new Future.value(fkData)
+            .then((entity) {
+              return entity != null
+                ? [entity]
+                : this._read(fkResource, filters: [new Filter(fkPk.columnName, data[fk.targetName])]);
+            })
+            .then((entities) => this._delete(fkResource, this._convertFromEntity(entities.first)));
+
+          futures.add(future);
+        }
+        else if (fk.isOneToMany) {
+          var future = new Future.value(fkData)
+            .then((entities) {
+              if (entities != null) {
+                return entities;
+              }
+              else {
+                var fkTarget = fkResource.simpleProperties.firstWhere((p) => p.name = fk.targetName).columnName,
+                    pk = resource.primaryKeyProperty.name;
+
+                return this._read(fkResource, filters: [new Filter(fkTarget, data[pk])]);
+              }
+            })
+            .then((entities) {
+              entities.forEach((entity) {
+                this._delete(fkResource, this._convertFromEntity(entity));
+              });
+            });
+
+          futures.add(future);
+        }
+      });
+
+    return Future.wait(futures);
   }
 
 

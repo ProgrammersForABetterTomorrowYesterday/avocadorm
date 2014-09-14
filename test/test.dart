@@ -1140,6 +1140,30 @@ void main() {
 
     });
 
+    test('Normal deletion with a m2o foreign key', () {
+
+      // onDelete Cascade is set on EntityA's entityB foreign key,
+      //  so the entityB with id 3 should be deleted also.
+
+      avocadorm.deleteById(EntityA, 4).then(expectAsync((r) {
+
+        avocadorm.readById(EntityB, 3).then(expectAsync((entityB) {
+
+          expect(
+              entityB,
+              isNull,
+              reason: 'Many-to-one foreign key should have been deleted.');
+
+        }));
+
+      }));
+
+    });
+
+    skip_test('Normal deletion with a o2m foreign key', () {
+
+    });
+
     test('Invalid deletion when id not in database', () {
       var entity = new EntityA()
           ..entityAId = 20
