@@ -13,7 +13,7 @@ void main() {
 
   group('Constructing the avocadorm', () {
 
-    test('instance is created', () {
+    test('returns the instance', () {
 
       expect(
           new Avocadorm(new MockDatabaseHandler()),
@@ -43,6 +43,7 @@ void main() {
   });
 
   group('Specifying the entities', () {
+
     var avocadorm;
 
     setUp(() {
@@ -50,70 +51,102 @@ void main() {
       avocadorm = new Avocadorm(new MockDatabaseHandler());
     });
 
-    test('Specifying a library of entity', () {
+    test('adds the entities in the specified library and returns the count', () {
+
+      expect(
+          avocadorm.addEntitiesInLibrary('entities'),
+          equals(3),
+          reason: 'A valid library name should return the number of entities added.');
+
+    });
+
+    test('adds the entities in the specified list of entity type and returns the count', () {
+
+      expect(
+          avocadorm.addEntities([EntityA, EntityB]),
+          equals(2),
+          reason: 'A valid list of entity type should return the number of entities added.');
+
+    });
+
+    test('add the specified entity and returns 1', () {
+
+      expect(
+          avocadorm.addEntity(EntityA),
+          equals(1),
+          reason: 'A valid entity type should return the value 1.');
+
+    });
+
+    test('throws if the library is null', () {
 
       expect(
           () => avocadorm.addEntitiesInLibrary(null),
           throwsArgumentError,
           reason: 'A null library name should throw an exception.');
 
+    });
+
+    test('throws if the library is of an invalid type', () {
+
       expect(
           () => avocadorm.addEntitiesInLibrary({'type': 'Invalid type'}),
           throwsArgumentError,
           reason: 'A library name of an invalid type should throw an exception.');
+
+    });
+
+    test('throws if the library is invalid', () {
 
       expect(
           () => avocadorm.addEntitiesInLibrary('Invalid library name'),
           throwsArgumentError,
           reason: 'An invalid library name should throw an exception.');
 
-      expect(
-          avocadorm.addEntitiesInLibrary('entities'),
-          equals(3),
-          reason: 'A valid library name should not throw an exception.');
-
     });
 
-    test('Specifying a list of entity', () {
+    test('throws if the list of entity type is null', () {
 
       expect(
           () => avocadorm.addEntities(null),
           throwsArgumentError,
           reason: 'A null list of entity type should throw an exception.');
 
+    });
+
+    test('throws if the list of entity type is of an invalid type', () {
+
       expect(
           () => avocadorm.addEntities('Invalid type'),
           throwsArgumentError,
           reason: 'A list of entity type that is not a list should throw an exception.');
 
+    });
+
+    test('throws if the list of entity type has an item of an invalid type', () {
+
       expect(
           () => avocadorm.addEntities(['Invalid type']),
           throwsArgumentError,
-          reason: 'An list of entity type in which an entity type is of an invalid type should throw an exception.');
-
-      expect(
-          avocadorm.addEntities([EntityA, EntityB]),
-          equals(2),
-          reason: 'A valid library name should not throw an exception.');
+          reason: 'An list of entity type in which an item is of an invalid type should throw an exception.');
 
     });
 
-    test('Specifying an entity', () {
+    test('throws if the entity type is null', () {
 
       expect(
           () => avocadorm.addEntity(null),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
 
+    });
+
+    test('throws if the entity type is of an invalid type', () {
+
       expect(
           () => avocadorm.addEntity('Invalid type'),
           throwsArgumentError,
           reason: 'An entity type of an invalid type should throw an exception.');
-
-      expect(
-          avocadorm.addEntity(EntityA),
-          equals(1),
-          reason: 'A valid library name should not throw an exception.');
 
     });
 
