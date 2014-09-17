@@ -1136,7 +1136,7 @@ void main() {
 
   });
 
-  skip_group('Deleting entities with many-to-one foreign keys', () {
+  group('Deleting entities with many-to-one foreign keys', () {
 
     var avocadorm;
 
@@ -1169,7 +1169,7 @@ void main() {
 
   });
 
-  skip_group('Deleting entities with one-to-many foreign keys', () {
+  group('Deleting entities with one-to-many foreign keys', () {
 
     var avocadorm;
 
@@ -1181,6 +1181,22 @@ void main() {
     });
 
     test('Normal deletion with a o2m foreign key', () {
+
+      // onDelete Cascade is set on EntityA's entityCs foreign key,
+      //   so all the entityC with entityAId 4 should be deleted also.
+
+      avocadorm.deleteById(EntityA, 4).then(expectAsync((r) {
+
+        avocadorm.readAll(EntityC, filters: [new Filter('entity_a_id', 4)]).then(expectAsync((entityCs) {
+
+          expect(
+              entityCs.length,
+              equals(0),
+              reason: 'One-to-many foreign keys should have been deleted.');
+
+        }));
+
+      }));
 
     });
 

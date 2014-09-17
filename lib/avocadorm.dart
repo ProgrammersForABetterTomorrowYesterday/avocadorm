@@ -632,7 +632,7 @@ class Avocadorm {
                 return entities;
               }
               else {
-                var fkTarget = fkResource.simpleProperties.firstWhere((p) => p.name = fk.targetName).columnName,
+                var fkTarget = fkResource.simpleProperties.firstWhere((p) => p.name == fk.targetName).columnName,
                     pk = resource.primaryKeyProperty.name;
 
                 return this._read(fkResource, filters: [new Filter(fkTarget, data[pk])]);
