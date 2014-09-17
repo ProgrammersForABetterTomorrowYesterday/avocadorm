@@ -202,9 +202,10 @@ class Avocadorm {
       throw new ArgumentError('Argument \'entityType\' should be an Entity.');
     }
 
-    var resource = this._getResource(entityType);
+    var resource = this._getResource(entityType),
+        dbFilters = this._convertFiltersToDatabaseFilters(filters, resource);
 
-    return this._count(resource, filters: filters);
+    return this._count(resource, filters: dbFilters);
   }
 
   Future<List<Entity>> readAll(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
@@ -216,9 +217,10 @@ class Avocadorm {
       throw new ArgumentError('Argument \'entityType\' should be an Entity.');
     }
 
-    var resource = this._getResource(entityType);
+    var resource = this._getResource(entityType),
+        dbFilters = this._convertFiltersToDatabaseFilters(filters, resource);
 
-    return this._read(resource, filters: filters, foreignKeys: foreignKeys);
+    return this._read(resource, filters: dbFilters, foreignKeys: foreignKeys);
   }
 
   Future<Entity> readById(Type entityType, Object primaryKeyValue, {List<String> foreignKeys}) {
@@ -706,6 +708,26 @@ class Avocadorm {
     });
 
     return map;
+  }
+
+  List<Filter> _convertFiltersToDatabaseFilters(List<Filter> filters, Resource resource) {
+    if (filters == null) {
+      return null;
+    }
+
+    var properties = resource.simpleAndPrimaryKeyProperties;
+
+    return filters.map((f) {
+      var property = properties.firstWhere((p) => p.name == f.name, orElse: () => null);
+
+      if (property == null) {
+        throw new ArgumentError('Property ${f.name} could not be found on ${resource.name}.');
+      }
+
+      f.name = property.columnName;
+
+      return f;
+    }).where((f) => f != null).toList();
   }
 
   static List<String> traverseForeignKeyList(List<String> foreignKeys, String propertyName) {

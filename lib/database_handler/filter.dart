@@ -1,8 +1,8 @@
 part of magnetfruit_avocadorm;
 
 class Filter {
-  String column;
+  String name;
   Object value;
 
-  Filter(this.column, this.value);
+  Filter(this.name, this.value);
 }

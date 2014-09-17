@@ -114,6 +114,6 @@ class MySqlDatabaseHandler extends DatabaseHandler {
   }
 
   static String _constructFilter(List<Filter> filters) {
-    return filters.map((f) => '`${f.column}` = ${_objToString(f.value)}').join(' AND ');
+    return filters.map((f) => '`${f.name}` = ${_objToString(f.value)}').join(' AND ');
   }
 }

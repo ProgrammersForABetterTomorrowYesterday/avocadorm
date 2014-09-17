@@ -25,7 +25,7 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
     var entities = _entityRepository[table];
 
     if (filters != null) {
-      entities = entities.where((e) => filters.every((f) => e[f.column] == f.value));
+      entities = entities.where((e) => filters.every((f) => e[f.name] == f.value));
     }
 
     return new Future.value(entities.length);
@@ -35,7 +35,7 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
     var entities = _entityRepository[table];
 
     if (filters != null) {
-      entities = entities.where((e) => filters.every((f) => e[f.column] == f.value));
+      entities = entities.where((e) => filters.every((f) => e[f.name] == f.value));
     }
 
     if (limit != null) {
@@ -66,7 +66,7 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
     var entities = _entityRepository[table];
 
     if (filters != null) {
-      entities.removeWhere((e) => filters.every((f) => e[f.column] == f.value));
+      entities.removeWhere((e) => filters.every((f) => e[f.name] == f.value));
     }
 
     return new Future.value(null);

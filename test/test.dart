@@ -305,7 +305,7 @@ void main() {
 
     test('returns the count of a given entity, filtered by the specified filter', () {
 
-      avocadorm.count(EntityA, filters: [new Filter('entity_b_id', 2)]).then(expectAsync((count) {
+      avocadorm.count(EntityA, filters: [new Filter('entityBId', 2)]).then(expectAsync((count) {
 
         expect(
             count,
@@ -491,7 +491,7 @@ void main() {
 
     test('returns all entities matching the filter', () {
 
-      avocadorm.readAll(EntityA, filters: [new Filter('entity_b_id', 2)]).then(expectAsync((entityAs) {
+      avocadorm.readAll(EntityA, filters: [new Filter('entityBId', 2)]).then(expectAsync((entityAs) {
 
         expect(
             entityAs.length,
@@ -1187,7 +1187,7 @@ void main() {
 
       avocadorm.deleteById(EntityA, 4).then(expectAsync((r) {
 
-        avocadorm.readAll(EntityC, filters: [new Filter('entity_a_id', 4)]).then(expectAsync((entityCs) {
+        avocadorm.readAll(EntityC, filters: [new Filter('entityAId', 4)]).then(expectAsync((entityCs) {
 
           expect(
               entityCs.length,
@@ -1197,6 +1197,29 @@ void main() {
         }));
 
       }));
+
+    });
+
+  });
+
+  group('Filters', () {
+
+    var avocadorm;
+
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm(new MockDatabaseHandler());
+
+      avocadorm.addEntities([EntityA, EntityB]);
+    });
+
+    test('throws if the specified property can\'t be found', () {
+
+      expect(
+          () => avocadorm.count(EntityA, filters: [new Filter('notFound', 1)]),
+          throwsArgumentError,
+          reason: 'Non-existing property in filter should throw an exception.'
+      );
 
     });
 
