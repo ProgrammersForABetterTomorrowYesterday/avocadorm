@@ -500,10 +500,10 @@ class Avocadorm {
 
 
   Resource _getResource(Type entityType) {
-    var resource = this._resources.firstWhere((r) => r.type == entityType, orElse: null);
+    var resource = this._resources.firstWhere((r) => r.type == entityType, orElse: () => null);
 
     if (resource == null) {
-      throw new ResourceException('Resource not found for entity ${entityType}.');
+      throw new AvocadormException('Resource not found for entity ${entityType}.');
     }
 
     return resource;

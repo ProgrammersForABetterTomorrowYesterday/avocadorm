@@ -246,6 +246,18 @@ void main() {
 
     });
 
+    test('throws if the entity was not added', () {
+
+      var entity = new EntityC()
+            ..name = 'Entity C';
+
+      expect(
+          () => avocadorm.create(entity),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'A non-existant entity should throw an exception.');
+
+    });
+
   });
 
   group('Counting entities', () {
@@ -376,6 +388,15 @@ void main() {
 
     });
 
+    test('throws if the entity was not added', () {
+
+      expect(
+          () => avocadorm.count(EntityC),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'A non-existant entity should throw an exception.');
+
+    });
+
   });
 
   group('Reading entities', () {
@@ -473,6 +494,15 @@ void main() {
           () => avocadorm.readById(EntityA, {}),
           throwsArgumentError,
           reason: 'A primary key value of an invalid type should throw an exception.');
+
+    });
+
+    test('throws if the entity was not added', () {
+
+      expect(
+          () => avocadorm.readAll(EntityC),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'A non-existant entity should throw an exception.');
 
     });
 
@@ -668,6 +698,19 @@ void main() {
 
     });
 
+    test('throws if the entity was not added', () {
+
+      var entity = new EntityC()
+            ..entityCId = 2
+            ..name = 'Entity C';
+
+      expect(
+          () => avocadorm.update(entity),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'A non-existant entity should throw an exception.');
+
+    });
+
   });
 
   group('Saving entities', () {
@@ -771,6 +814,19 @@ void main() {
       expect(() => avocadorm.saveFromMap(EntityA, null), throwsArgumentError, reason: 'A null entity map should throw an exception.');
 
       expect(() => avocadorm.saveFromMap(EntityA, 'Invalid Type'), throwsArgumentError, reason: 'An entity map of an invalid type should throw an exception.');
+
+    });
+
+    test('throws if the entity was not added', () {
+
+      var entity = new EntityC()
+            ..entityCId = 2
+            ..name = 'Entity C';
+
+      expect(
+          () => avocadorm.save(entity),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'A non-existant entity should throw an exception.');
 
     });
 
@@ -1131,6 +1187,19 @@ void main() {
           () => avocadorm.deleteById(EntityA, {}),
           throwsArgumentError,
           reason: 'A primary key value of an invalid type should throw an exception.');
+
+    });
+
+    test('throws if the entity was not added', () {
+
+      var entity = new EntityC()
+            ..entityCId = 2
+            ..name = 'Entity C';
+
+      expect(
+          () => avocadorm.delete(entity),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'A non-existant entity should throw an exception.');
 
     });
 
