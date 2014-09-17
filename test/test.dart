@@ -22,6 +22,24 @@ void main() {
 
     });
 
+    test('throws if the database handler is null', () {
+
+      expect(
+          () => new Avocadorm(null),
+          throwsArgumentError,
+          reason: 'A null database handler should throw an exception.');
+
+    });
+
+    test('throws if the entity type is invalid', () {
+
+      expect(
+          () => new Avocadorm('Invalid Type'),
+          throwsArgumentError,
+          reason: 'A database handler of an invalid type should throw an exception.');
+
+    });
+
   });
 
   group('Specifying the entities', () {
