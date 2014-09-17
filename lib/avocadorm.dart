@@ -123,6 +123,7 @@ class Avocadorm {
         data = this._convertFromEntity(entity),
         filters = [new Filter(pk.columnName, data[pk.name])];
 
+    // The create() method makes sure the primary key value is not kept.
     data[pk.name] = null;
 
     return this._count(resource, filters: filters).then((count) {
@@ -155,6 +156,7 @@ class Avocadorm {
         pk = resource.primaryKeyProperty,
         filters = [new Filter(pk.columnName, data[pk.name])];
 
+    // The create() method makes sure the primary key value is not kept.
     data[pk.name] = null;
 
     return this._count(resource, filters: filters).then((count) {

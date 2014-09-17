@@ -1,6 +1,6 @@
 part of entities;
 
-@Table('entity_b', allowHttpMethods: HttpMethod.GET | HttpMethod.HEAD)
+@Table('entity_b')
 class EntityB extends Entity {
 
   @Column.PrimaryKey('entity_b_id')

@@ -91,6 +91,12 @@ void setEntities() {
       { 'entity_b_id': 3, 'name': 'Third EntityB' },
       { 'entity_b_id': 4, 'name': 'Fourth EntityB' },
       { 'entity_b_id': 5, 'name': 'Fifth EntityB' },
-      { 'entity_b_id': 6, 'name': 'Sixth EntityB' },
+      { 'entity_b_id': 6, 'name': 'Sixth EntityB' }
+  ];
+
+  _entityRepository['entity_c'] = [
+      { 'entity_c_id': 1, 'name': 'First EntityC', 'entity_a_id': 3 },
+      { 'entity_c_id': 2, 'name': 'Second EntityC', 'entity_a_id': 4  },
+      { 'entity_c_id': 3, 'name': 'Third EntityC', 'entity_a_id': 4  }
   ];
 }
