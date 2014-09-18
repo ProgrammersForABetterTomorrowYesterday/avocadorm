@@ -448,16 +448,19 @@ class Avocadorm {
         columns = resource.simpleProperties.map((p) => p.columnName).toList(),
         dbData = this._convertDataToDatabaseData(data, resource);
 
+    var pkValue;
+
     return this._databaseHandler.create(resource.tableName, pkColumn, columns, dbData)
-      .then((pkValue) {
-        this._saveForeignKeys(resource, data);
-        return pkValue;
+      .then((pk) {
+        pkValue = pk;
+        return this._saveForeignKeys(resource, data);
       })
-    .then((pkValue) {
-      dbData = this._convertDataToDatabaseData(data, resource);
-      dbData[pkColumn] = pkValue;
-      return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData);
-    });
+      .then((r) {
+        dbData = this._convertDataToDatabaseData(data, resource);
+        dbData[pkColumn] = pkValue;
+        return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData);
+      })
+      .then((r) => pkValue);
 }
 
   Future<int> _count(Resource resource, {List<Filter> filters}) {
@@ -477,15 +480,18 @@ class Avocadorm {
         columns = resource.simpleProperties.map((p) => p.columnName).toList(),
         dbData = this._convertDataToDatabaseData(data, resource);
 
+    var pkValue;
+
     return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData)
-      .then((pkValue) {
+      .then((pk) {
+        pkValue = pk;
         this._saveForeignKeys(resource, data);
-        return pkValue;
       })
-      .then((pkValue) {
+      .then((r) {
         dbData =  this._convertDataToDatabaseData(data, resource);
         return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData);
-      });
+      })
+      .then((r) => pkValue);
   }
 
   Future _delete(Resource resource, Map data) {
