@@ -28,7 +28,7 @@ class Resource {
 
     this.name = MirrorSystem.getName(classMirror.simpleName);
     this.type = entityType;
-    this.tableName = table.tableName;
+    this.tableName = table.tableName != null && table.tableName.isNotEmpty ? table.tableName : this.name;
     this.httpMethods = table.allowHttpMethods;
     this.properties = _convertColumnsToProperties(entityType);
   }
@@ -58,7 +58,7 @@ class Resource {
 
   static Property _convertColumnToProperty(String name, Type type, Column column) {
     if (column.name == null || column.name.isEmpty) {
-      throw new ResourceException('Entity \'${type}\' has column \'${name}\' that has an invalid name.');
+      column.name = name;
     }
 
     return new Property(name, type, column.name);
@@ -66,7 +66,12 @@ class Resource {
 
   static Property _convertPrimaryKeyColumnToProperty(String name, Type type, Column column) {
     if (column.name == null || column.name.isEmpty) {
-      throw new ResourceException('Entity \'${type}\' has primary key column \'${name}\' that has an invalid name.');
+      column.name = name;
+    }
+
+    var r = reflectType(type);
+    if (!r.isSubtypeOf(reflectType(num)) && !r.isSubtypeOf(reflectType(String))) {
+      throw new ResourceException('Primary keys should be a value type.');
     }
 
     return new PrimaryKeyProperty(name, type, column.name);
