@@ -1,6 +1,6 @@
 part of entities;
 
-@Table('company', allowHttpMethods: HttpMethod.ALL)
+@Table('company')
 class Company extends Entity {
 
   @Column.PrimaryKey('company_id')

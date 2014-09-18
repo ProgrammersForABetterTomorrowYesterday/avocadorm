@@ -5,7 +5,6 @@ class Resource {
   Type type;
   String tableName;
   List<Property> properties;
-  int httpMethods;
 
   Property get primaryKeyProperty => this.properties.firstWhere((f) => f is PrimaryKeyProperty, orElse: null);
 
@@ -29,7 +28,6 @@ class Resource {
     this.name = MirrorSystem.getName(classMirror.simpleName);
     this.type = entityType;
     this.tableName = table.tableName != null && table.tableName.isNotEmpty ? table.tableName : this.name;
-    this.httpMethods = table.allowHttpMethods;
     this.properties = _convertColumnsToProperties(entityType);
   }
 
