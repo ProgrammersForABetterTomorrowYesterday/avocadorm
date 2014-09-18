@@ -4,7 +4,7 @@ part of entities;
 class EntityC extends Entity {
 
   @Column.PrimaryKey('entity_c_id')
-  int entityCId;
+  String entityCId;
 
   @Column('name')
   String name;

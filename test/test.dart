@@ -6,6 +6,7 @@ import 'package:magnetfruit_avocadorm/avocadorm.dart';
 import 'package:mock/mock.dart';
 import 'package:unittest/unittest.dart';
 import 'entities/entities.dart';
+import 'entities/invalid_entities.dart';
 
 part 'mock_database_handler.dart';
 
@@ -147,6 +148,79 @@ void main() {
           () => avocadorm.addEntity('Invalid type'),
           throwsArgumentError,
           reason: 'An entity type of an invalid type should throw an exception.');
+
+    });
+
+  });
+
+  group('Constructing a resource from an entity type', () {
+
+    var avocadorm;
+
+    setUp(() {
+      avocadorm = new Avocadorm(new MockDatabaseHandler());
+    });
+
+    test('throws if the entity type does not have a Table metadata', () {
+
+      expect(
+          () => avocadorm.addEntity(EntityNoTable),
+          throwsA(new isInstanceOf<ResourceException>()),
+          reason: 'An entity should have a Table metadata.');
+
+    });
+
+    test('throws if a primary key is of an invalid type', () {
+
+      expect(
+          () => avocadorm.addEntity(PkInvalidEntity),
+          throwsA(new isInstanceOf<ResourceException>()),
+          reason: 'A primary key should be a number or a string.');
+
+    });
+
+    test('throws if a m2o foreign key is not of an entity type', () {
+
+      expect(
+          () => avocadorm.addEntity(FkInvalidM2OTypeEntity),
+          throwsA(new isInstanceOf<ResourceException>()),
+          reason: 'A m2o foreign key should be of an entity type.');
+
+    });
+
+    test('throws if a m2o foreign key doesn\'t point to a property in the class', () {
+
+      expect(
+          () => avocadorm.addEntity(FkInvalidM2OIdEntity),
+          throwsA(new isInstanceOf<ResourceException>()),
+          reason: 'A m2o foreign key should point to a property in the same class.');
+
+    });
+
+    test('throws if a o2m foreign key is not a list', () {
+
+      expect(
+          () => avocadorm.addEntity(FkInvalidO2MListEntity),
+          throwsA(new isInstanceOf<ResourceException>()),
+          reason: 'A o2m foreign key should be a list.');
+
+    });
+
+    test('throws if a o2m foreign key is not a list of an entity type', () {
+
+      expect(
+          () => avocadorm.addEntity(FkInvalidO2MTypeEntity),
+          throwsA(new isInstanceOf<ResourceException>()),
+          reason: 'A o2m foreign key should be a list of entity type.');
+
+    });
+
+    test('throws if a o2m foreign key does not point to a property in the target entity', () {
+
+      expect(
+          () => avocadorm.addEntity(FkInvalidO2MTargetEntity),
+          throwsA(new isInstanceOf<ResourceException>()),
+          reason: 'A o2m foreign key should point to a property in the target entity.');
 
     });
 

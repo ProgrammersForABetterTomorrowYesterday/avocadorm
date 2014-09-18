@@ -1,6 +1,6 @@
-part of entities;
+part of invalid_entities;
 
-@Table('normal_entity', allowHttpMethods: HttpMethod.POST | HttpMethod.PUT)
+@Table('normal_entity')
 class NormalEntity extends Entity {
 
   @Column('string_property')
