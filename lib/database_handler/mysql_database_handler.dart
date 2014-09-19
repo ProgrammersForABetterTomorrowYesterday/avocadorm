@@ -11,6 +11,7 @@ class MySqlDatabaseHandler extends DatabaseHandler {
   }
 
   Future<Object> create(String table, String pkColumn, List<String> columns, Map data) {
+    columns = new List.from(columns);
     columns.insert(0, pkColumn);
 
     var cols = columns.map((c) => '`${c}`'),
@@ -63,6 +64,7 @@ class MySqlDatabaseHandler extends DatabaseHandler {
   }
 
   Future<Object> update(String table, String pkColumn, List<String> columns, Map data) {
+    columns = new List.from(columns);
     columns.insert(0, pkColumn);
 
     var cols = columns.map((c) => '`${c}`'),
