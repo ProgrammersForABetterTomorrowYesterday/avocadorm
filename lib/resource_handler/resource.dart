@@ -79,10 +79,6 @@ class Resource {
   }
 
   static Property _convertManyToOneForeignKeyColumnToProperty(String name, Type type, Column column, List<VariableMirror> variableMirrors) {
-    if (column.targetName == null || column.targetName.isEmpty) {
-      column.targetName = name;
-    }
-
     if (type is! Type || !reflectType(type).isSubtypeOf(reflectType(Entity))) {
       throw new ResourceException('Many-to-one foreign keys must be of type Entity.');
     }
@@ -91,14 +87,14 @@ class Resource {
       throw new ResourceException('Many-to-one foreign keys must point to a Column in the same class.');
     }
 
+    if (column.targetName == null || column.targetName.isEmpty) {
+      column.targetName = '${name}Id';
+    }
+
     return new ForeignKeyProperty.ManyToOne(name, type, column.targetName, column.onUpdate, column.onDelete);
   }
 
   static Property _convertOneToManyForeignKeyColumnToProperty(String name, Type type, Column column, List<VariableMirror> variableMirrors) {
-    if (column.targetName == null || column.targetName.isEmpty) {
-      column.targetName = name;
-    }
-
     if (!reflectType(type).isSubtypeOf(reflectType(List))) {
       throw new ResourceException('One-to-many foreign keys must be of type List.');
     }
@@ -116,6 +112,10 @@ class Resource {
       .where((vm) => vm.metadata.any((im) => im.reflectee is Column))
       .any((vm) => MirrorSystem.getName(vm.simpleName) == column.targetName)) {
       throw new ResourceException('One-to-many foreign keys must point to a Column in the target class.');
+    }
+
+    if (column.targetName == null || column.targetName.isEmpty) {
+      column.targetName = '${MirrorSystem.getName(reflectType(subType).simpleName)}Id';
     }
 
     return new ForeignKeyProperty.OneToMany(name, subType, column.targetName, column.onUpdate, column.onDelete);
