@@ -24,7 +24,7 @@ echo Pub install
 pub install
 
 echo Running tests
-dart test/test.dart
+dart test/avocadorm_test.dart
 
 #sh -e /etc/init.d/xvfb start
 
