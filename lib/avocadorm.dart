@@ -635,6 +635,7 @@ class Avocadorm {
   }
 
 
+  // Creates an [Entity] in the database.
   Future<Object> _create(Resource resource, Map data) {
     var pkColumn = resource.primaryKeyProperty.columnName,
         columns = resource.simpleProperties.map((p) => p.columnName).toList(),
@@ -655,10 +656,12 @@ class Avocadorm {
       .then((r) => pkValue);
 }
 
+  // Counts [Entity]s in the database.
   Future<int> _count(Resource resource, {List<Filter> filters}) {
     return this._databaseHandler.count(resource.tableName, filters);
   }
 
+  // Reads [Entity]s in the database.
   Future<List<Entity>> _read(Resource resource, {List<Filter> filters, List<String> foreignKeys, int limit}) {
     var columns = resource.simpleAndPrimaryKeyProperties.map((p) => p.columnName).toList();
 
@@ -667,6 +670,7 @@ class Avocadorm {
       .then((entities) => Future.wait(entities.map((e) => _retrieveForeignKeys(e, foreignKeys))));
   }
 
+  // Updates an [Entity] in the database.
   Future<Object> _update(Resource resource, Map data) {
     var pkColumn = resource.primaryKeyProperty.columnName,
         columns = resource.simpleProperties.map((p) => p.columnName).toList(),
@@ -686,6 +690,7 @@ class Avocadorm {
       .then((r) => pkValue);
   }
 
+  // Deletes an [Entity] in the database.
   Future _delete(Resource resource, Map data) {
     var pk = resource.primaryKeyProperty,
         pkColumn = pk.columnName,
@@ -697,6 +702,7 @@ class Avocadorm {
   }
 
 
+  // Finds the [Resource] instance linked to the specified [Entity] class.
   Resource _getResource(Type entityType) {
     var resource = this._resources.firstWhere((r) => r.type == entityType, orElse: () => null);
 
@@ -707,6 +713,7 @@ class Avocadorm {
     return resource;
   }
 
+  // Recursively retrieves the [Entity]'s specified foreign keys.
   Future<Entity> _retrieveForeignKeys(Entity entity, List<String> foreignKeys) {
     if (entity == null) {
       return new Future.value(null);
@@ -735,7 +742,7 @@ class Avocadorm {
           future = this._read(
               this._getResource(p.type),
               filters: filters,
-              foreignKeys: traverseForeignKeyList(foreignKeys, p.name),
+              foreignKeys: _traverseForeignKeyList(foreignKeys, p.name),
               limit: 1)
             .then((entity) => entity.length > 0 ? entity.first : null);
         }
@@ -747,7 +754,7 @@ class Avocadorm {
           future = this._read(
               this._getResource(p.type),
               filters: [new Filter(targetColumn, targetValue)],
-              foreignKeys: traverseForeignKeyList(foreignKeys, p.name));
+              foreignKeys: _traverseForeignKeyList(foreignKeys, p.name));
         }
 
         if (future != null) {
@@ -758,6 +765,7 @@ class Avocadorm {
     return Future.wait(futures).then((r) => entity);
   }
 
+  // Recursively saves the [Entity] and its foreign keys.
   Future _saveForeignKeys(Resource resource, Map data) {
     var futures = [];
 
@@ -804,6 +812,7 @@ class Avocadorm {
     return Future.wait(futures);
   }
 
+  // Recursively deletes the [Entity] and its foreign keys.
   Future _deleteForeignKeys(Resource resource, Map data) {
     var futures = [];
 
@@ -852,6 +861,7 @@ class Avocadorm {
   }
 
 
+  // Converts a [data] [Map] to an [Entity] instance.
   Entity _convertToEntity(Map data, Resource resource) {
     if (data == null) {
       return null;
@@ -866,6 +876,7 @@ class Avocadorm {
     return entityMirror.reflectee;
   }
 
+  // Converts an [Entity] instance to a [Map].
   Map _convertFromEntity(Entity entity) {
     if (entity == null) {
       return null;
@@ -894,6 +905,7 @@ class Avocadorm {
     return map;
   }
 
+  // Converts a [data] [Map] to a database-oriented [Map].
   Map _convertDataToDatabaseData(Map data, Resource resource) {
     if (data == null) {
       return null;
@@ -908,6 +920,7 @@ class Avocadorm {
     return map;
   }
 
+  // Converts a list of [Filter] to a database-oriented list of [Filter].
   List<Filter> _convertFiltersToDatabaseFilters(List<Filter> filters, Resource resource) {
     if (filters == null) {
       return null;
@@ -928,17 +941,19 @@ class Avocadorm {
     }).where((f) => f != null).toList();
   }
 
-  static List<String> traverseForeignKeyList(List<String> foreignKeys, String propertyName) {
+  // Moves up through the list of foreign keys, eliminating unwanted foreign keys.
+  static List<String> _traverseForeignKeyList(List<String> foreignKeys, String propertyName) {
     var traversedForeignKeys = foreignKeys
       .where((fk) => fk == propertyName || fk.startsWith('${propertyName}.'))
       .map((fk) => fk.substring(propertyName.length))
       .where((fk) => fk.isNotEmpty)
-      .map((fk) => trimLeft(fk, '.'));
+      .map((fk) => _trimLeft(fk, '.'));
 
-    return distinct(traversedForeignKeys);
+    return _distinct(traversedForeignKeys);
   }
 
-  static String trimLeft(String input, String trimChar) {
+  // Removes the left-most [trimChar] character from the [input] string.
+  static String _trimLeft(String input, String trimChar) {
     int pos = 0;
 
     while (pos < input.length && input[pos] == trimChar) {
@@ -948,7 +963,8 @@ class Avocadorm {
     return input.substring(pos);
   }
 
-  static List distinct(List input) {
+  // Removes duplicate items from the [input] list.
+  static List _distinct(List input) {
     var output = [];
 
     input.forEach((i) {
