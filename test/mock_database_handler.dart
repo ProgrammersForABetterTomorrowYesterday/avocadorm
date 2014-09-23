@@ -1,7 +1,9 @@
 part of avocadorm_test;
 
+/// A fake database handler that stores values in memory.
 class MockDatabaseHandler extends Mock implements DatabaseHandler {
 
+  /// Creates a new entry in the specified repository.
   Future<Object> create(String table, String pkColumn, List<String> columns, Map data) {
     var entities = _entityRepository[table],
         newEntity = {};
@@ -21,6 +23,7 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
     return new Future.value(newEntity[pkColumn]);
   }
 
+  /// Counts how many entries there are in the specified repository.
   Future<int> count(String table, [List<Filter> filters]) {
     var entities = _entityRepository[table];
 
@@ -31,6 +34,7 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
     return new Future.value(entities.length);
   }
 
+  /// Reads entities in the specified repository.
   Future<List<Map>> read(String table, List<String> columns, [List<Filter> filters, int limit]) {
     var entities = _entityRepository[table];
 
@@ -45,6 +49,7 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
     return new Future.value(entities);
   }
 
+  /// Updates an entity in the specified repository.
   Future<Object> update(String table, String pkColumn, List<String> columns, Map data) {
     var entities = _entityRepository[table],
         newEntity = {};
@@ -62,6 +67,7 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
     return new Future.value(newEntity[pkColumn]);
   }
 
+  /// Deletes an entity from the specified repository.
   Future delete(String table, [List<Filter> filters]) {
     var entities = _entityRepository[table];
 
@@ -76,6 +82,7 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
 
 Map<Type, List<Map>> _entityRepository = new Map<Type, List<Map>>();
 
+// Creates some default values in the repository.
 void setEntities() {
   _entityRepository['entity_a'] = [
       { 'entity_a_id': 1, 'name': 'First EntityA', 'entity_b_id': 1 },
