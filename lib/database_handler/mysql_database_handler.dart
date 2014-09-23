@@ -3,13 +3,26 @@ import 'dart:mirrors';
 import 'package:magnetfruit_avocadorm/avocadorm.dart';
 import 'package:sqljocky/sqljocky.dart';
 
+/// A MySQL database interface for usage with an [Avocadorm].
 class MySqlDatabaseHandler extends DatabaseHandler {
+
+  /// Handler of queries for the database.
   ConnectionPool pool;
 
+  /**
+   * Creates the [DatabaseHandler] for the MySQL database.
+   */
   MySqlDatabaseHandler(String host, int port, String database, String user, String password) {
     this.pool = new ConnectionPool(host: host, port: port, db: database, user: user, password: password);
   }
 
+  /**
+   * Creates a new table row in the database.
+   *
+   * Creates a new table row with the specified [data]. The [columns] list has the normal columns only, and
+   * excludes the primary key column. Returns a [Future] containing the primary key value of the new table row. The
+   * primary key is expected to be null or non-existant in the table.
+   */
   Future<Object> create(String table, String pkColumn, List<String> columns, Map data) {
     columns = new List.from(columns);
     columns.insert(0, pkColumn);
@@ -25,6 +38,12 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     });
   }
 
+  /**
+   * Counts how many table rows are in the database.
+   *
+   * If [filters] list is null or empty, counts the total amount of table rows in the specified table. Otherwise,
+   * counts how many table rows match the specified list of filter. Returns a [Future] containing the count.
+   */
   Future<int> count(String table, [List<Filter> filters]) {
     var script = 'SELECT COUNT(*) FROM `${table}`';
 
@@ -41,6 +60,13 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     });
   }
 
+  /**
+   * Reads table rows in the database.
+   *
+   * Reads the specified [columns] from the specified [table], in respect of optional [filters] list and [limit].
+   * Returns a [Future] containing a list of [Map] with the required values. Reading by primary key value should
+   * use this method with [limit] = 1, and take the first item.
+   */
   Future<List<Map>> read(String table, List<String> columns, [List<Filter> filters, int limit]) {
     var cols = columns.map((c) => '`${c}`');
 
@@ -63,6 +89,13 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     });
   }
 
+  /**
+   * Updates a table row in the database.
+   *
+   * Updates a table row with the specified [data]. The [columns] list has the normal columns only, and
+   * excludes the primary key column. Returns a [Future] containing the primary key value of the new table row. The
+   * primary key is expected to be existant in the table.
+   */
   Future<Object> update(String table, String pkColumn, List<String> columns, Map data) {
     columns = new List.from(columns);
     columns.insert(0, pkColumn);
@@ -80,6 +113,12 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     });
   }
 
+  /**
+   * Deletes a table row from the database.
+   *
+   * Deletes the table rows matching the [filters] list. If [filters] is null or empty, this will delete all table
+   * rows from the specified [table].
+   */
   Future delete(String table, [List<Filter> filters]) {
     var script = 'DELETE FROM `${table}`';
 
@@ -92,6 +131,7 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     });
   }
 
+  // Converts a list of SQLJocky [Field] to a [Map].
   Map _constructMapFromDatabase(Row input, List<Field> fields) {
     var output = new Map<String, Object>();
 
@@ -103,6 +143,7 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     return output;
   }
 
+  // Converts the [value] to a string representation understood by MySQL.
   static String _objToString(Object value) {
     if (value is String) {
       return '\'${value}\'';
@@ -115,7 +156,9 @@ class MySqlDatabaseHandler extends DatabaseHandler {
     return value.toString();
   }
 
+  // Converts the list of [Filter] to a string representation understood by MySQL.
   static String _constructFilter(List<Filter> filters) {
     return filters.map((f) => '`${f.name}` = ${_objToString(f.value)}').join(' AND ');
   }
+
 }
