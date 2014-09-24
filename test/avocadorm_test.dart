@@ -1411,7 +1411,7 @@ void main() {
 
       expect(
           () => avocadorm.count(EntityA, filters: [new Filter('notFound', 1)]),
-          throwsArgumentError,
+          throwsA(new isInstanceOf<AvocadormException>()),
           reason: 'Non-existing property in filter should throw an exception.'
       );
 

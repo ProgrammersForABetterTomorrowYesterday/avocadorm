@@ -233,6 +233,7 @@ class Avocadorm {
    */
   Future<int> count(Type entityType, {List<Filter> filters}) {
     _validateEntityType(entityType);
+    _validateFilterList(filters);
 
     var resource = this._getResource(entityType),
         dbFilters = this._convertFiltersToDatabaseFilters(filters, resource);
@@ -255,6 +256,7 @@ class Avocadorm {
    */
   Future<List<Entity>> readAll(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
     _validateEntityType(entityType);
+    _validateFilterList(filters);
 
     var resource = this._getResource(entityType),
         dbFilters = this._convertFiltersToDatabaseFilters(filters, resource);
@@ -781,7 +783,7 @@ class Avocadorm {
       var property = properties.firstWhere((p) => p.name == f.name, orElse: () => null);
 
       if (property == null) {
-        throw new ArgumentError('Property ${f.name} could not be found on ${resource.name}.');
+        throw new AvocadormException('Property ${f.name} could not be found on ${resource.name}.');
       }
 
       f.name = property.columnName;
@@ -846,6 +848,30 @@ class Avocadorm {
     if (data is! Map) {
       throw new ArgumentError('Data map is of an invalid type.');
     }
+  }
+
+  // Validates a [Filter] argument.
+  static void _validateFilter(Filter filter) {
+    if (filter == null) {
+      throw new ArgumentError('Filter must not be null.');
+    }
+
+    if (filter is! Filter) {
+      throw new ArgumentError('Filter is of an invalid type.');
+    }
+  }
+
+  // Validates a list of [Filter] argument. It is assumed to be nullable.
+  static void _validateFilterList(List<Filter> filters) {
+    if (filters == null) {
+      return;
+    }
+
+    if (filters is! Iterable) {
+      throw new ArgumentError('List of filter is of an invalid type.');
+    }
+
+    filters.forEach((f) => _validateFilter(f));
   }
 
   // Moves up through the list of foreign keys, eliminating unwanted foreign keys.
