@@ -86,18 +86,10 @@ void main() {
           throwsArgumentError,
           reason: 'A null library name should throw an exception.');
 
-    });
-
-    test('throws if the library is of an invalid type', () {
-
       expect(
           () => avocadorm.addEntitiesInLibrary({'type': 'Invalid type'}),
           throwsArgumentError,
           reason: 'A library name of an invalid type should throw an exception.');
-
-    });
-
-    test('throws if the library is invalid', () {
 
       expect(
           () => avocadorm.addEntitiesInLibrary('Invalid library name'),
@@ -106,25 +98,17 @@ void main() {
 
     });
 
-    test('throws if the list of entity type is null', () {
+    test('throws if the list of entity type is invalid', () {
 
       expect(
           () => avocadorm.addEntities(null),
           throwsArgumentError,
           reason: 'A null list of entity type should throw an exception.');
 
-    });
-
-    test('throws if the list of entity type is of an invalid type', () {
-
       expect(
           () => avocadorm.addEntities('Invalid type'),
           throwsArgumentError,
           reason: 'A list of entity type that is not a list should throw an exception.');
-
-    });
-
-    test('throws if the list of entity type has an item of an invalid type', () {
 
       expect(
           () => avocadorm.addEntities(['Invalid type']),
@@ -133,16 +117,12 @@ void main() {
 
     });
 
-    test('throws if the entity type is null', () {
+    test('throws if the entity type is invalid', () {
 
       expect(
           () => avocadorm.addEntity(null),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
-
-    });
-
-    test('throws if the entity type is of an invalid type', () {
 
       expect(
           () => avocadorm.addEntity('Invalid type'),
@@ -1405,6 +1385,28 @@ void main() {
       avocadorm = new Avocadorm(new MockDatabaseHandler());
 
       avocadorm.addEntities([EntityA, EntityB]);
+    });
+
+    test('throws if the filter list is invalid', () {
+
+      expect(
+          () => avocadorm.count(EntityA, filters: 'Invalid type'),
+          throwsArgumentError,
+          reason: 'A filter list of an invalid type should throw an exception.'
+      );
+
+      expect(
+          () => avocadorm.count(EntityA, filters: [null]),
+          throwsArgumentError,
+          reason: 'A null filter should throw an exception.'
+      );
+
+      expect(
+          () => avocadorm.count(EntityA, filters: ['Invalid type']),
+          throwsArgumentError,
+          reason: 'A filter of an invalid type should throw an exception.'
+      );
+
     });
 
     test('throws if the specified property can\'t be found', () {
