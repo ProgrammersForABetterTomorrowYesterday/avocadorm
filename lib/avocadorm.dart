@@ -32,11 +32,11 @@ class Avocadorm {
    */
   Avocadorm(DatabaseHandler databaseHandler) {
     if (databaseHandler == null) {
-      throw new ArgumentError('Argument \'databaseHandler\' must not be null.');
+      throw new ArgumentError('Database handler must not be null.');
     }
 
     if (databaseHandler is! DatabaseHandler) {
-      throw new ArgumentError('Argument \'databaseHandler\' should be a DatabaseHandler.');
+      throw new ArgumentError('Database handler is of an invalid type.');
     }
 
     this._databaseHandler = databaseHandler;
@@ -54,24 +54,16 @@ class Avocadorm {
    *     avo.addEntitiesInLibrary('entities');
    */
   int addEntitiesInLibrary(String libraryName) {
-    if (libraryName == null) {
-      throw new ArgumentError('Argument \'libraryName\' must not be null.');
+    if (libraryName == null || libraryName is! String || libraryName.isEmpty) {
+      throw new ArgumentError('Library name must be a non-null, non-empty String.');
     }
 
-    if (libraryName is! String) {
-      throw new ArgumentError('Argument \'libraryName\' must be a String.');
-    }
-
-    if (libraryName.isEmpty) {
-      throw new ArgumentError('Argument \'libraryName\' must not be empty.');
-    }
-
-    LibraryMirror lib;
+    var lib;
 
     try {
       lib = currentMirrorSystem().findLibrary(new Symbol(libraryName));
     } catch(e) {
-      throw new ArgumentError('Argument \'libraryName\' must designate a valid library name.');
+      throw new ArgumentError('Library name must designate a valid library.');
     }
 
     var count = 0;
@@ -104,17 +96,7 @@ class Avocadorm {
    *     avo.addEntities([Employee, Company]);
    */
   int addEntities(List<Type> entityTypes) {
-    if (entityTypes == null) {
-      throw new ArgumentError('Argument \'entityTypes\' must not be null.');
-    }
-
-    if (entityTypes is! Iterable) {
-      throw new ArgumentError('Argument \'entityTypes\' should be a list of Entity type.');
-    }
-
-    if (entityTypes.any((et) => et is! Type || !reflectType(et).isSubtypeOf(reflectType(Entity)))) {
-      throw new ArgumentError('Argument \'entityTypes\' should be a list of Entity type.');
-    }
+    _validateEntityTypeList(entityTypes);
 
     var count = 0;
 
@@ -141,13 +123,7 @@ class Avocadorm {
    *     avo.addEntity(EmployeeType);
    */
   int addEntity(Type entityType) {
-    if (entityType == null) {
-      throw new ArgumentError('Argument \'entityType\' must not be null.');
-    }
-
-    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
-      throw new ArgumentError('Argument \'entityType\' should be an Entity class.');
-    }
+    _validateEntityType(entityType);
 
     return this._addEntityResource(entityType) ? 1 : 0;
   }
@@ -173,13 +149,7 @@ class Avocadorm {
    *     avo.create(entity);
    */
   Future<Object> create(Entity entity) {
-    if (entity == null) {
-      throw new ArgumentError('Argument \'entity\' must not be null.');
-    }
-
-    if (entity is! Entity) {
-      throw new ArgumentError('Argument \'entity\' should be an Entity.');
-    }
+    _validateEntity(entity);
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -211,21 +181,8 @@ class Avocadorm {
    *     avo.createFromMap(httpResponse);
    */
   Future<Object> createFromMap(Type entityType, Map data) {
-    if (entityType == null) {
-      throw new ArgumentError('Argument \'entityType\' must not be null.');
-    }
-
-    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
-      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
-    }
-
-    if (data == null) {
-      throw new ArgumentError('Argument \'data\' must not be null.');
-    }
-
-    if (data is! Map) {
-      throw new ArgumentError('Argument \'data\' should be a Map.');
-    }
+    _validateEntityType(entityType);
+    _validateDataMap(data);
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -253,21 +210,8 @@ class Avocadorm {
    *     avo.hasId(Employee, value);
    */
   Future<bool> hasId(Type entityType, Object primaryKeyValue) {
-    if (entityType == null) {
-      throw new ArgumentError('Argument \'entityType\' must not be null.');
-    }
-
-    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
-      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
-    }
-
-    if (primaryKeyValue == null) {
-      throw new ArgumentError('Argument \'primaryKeyValue\' must not be null.');
-    }
-
-    if (primaryKeyValue != null && primaryKeyValue is! num && primaryKeyValue is! String) {
-      throw new ArgumentError('Argument \'primaryKeyValue\' should be a value type.');
-    }
+    _validateEntityType(entityType);
+    _validatePrimaryKeyValue(primaryKeyValue);
 
     var resource = this._getResource(entityType),
         pkColumn = resource.primaryKeyProperty.columnName,
@@ -288,13 +232,7 @@ class Avocadorm {
    *     avo.count(Employee, filters: [new Filter('firstName', 'John')]);
    */
   Future<int> count(Type entityType, {List<Filter> filters}) {
-    if (entityType == null) {
-      throw new ArgumentError('Argument \'entityType\' must not be null.');
-    }
-
-    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
-      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
-    }
+    _validateEntityType(entityType);
 
     var resource = this._getResource(entityType),
         dbFilters = this._convertFiltersToDatabaseFilters(filters, resource);
@@ -316,13 +254,7 @@ class Avocadorm {
    *     avo.readAll(Company, foreignKeys: ['employees']);
    */
   Future<List<Entity>> readAll(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
-    if (entityType == null) {
-      throw new ArgumentError('Argument \'entityType\' must not be null.');
-    }
-
-    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
-      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
-    }
+    _validateEntityType(entityType);
 
     var resource = this._getResource(entityType),
         dbFilters = this._convertFiltersToDatabaseFilters(filters, resource);
@@ -341,21 +273,8 @@ class Avocadorm {
    *     avo.readById(Employee, value, foreignKeys: ['answersTo']);
    */
   Future<Entity> readById(Type entityType, Object primaryKeyValue, {List<String> foreignKeys}) {
-    if (entityType == null) {
-      throw new ArgumentError('Argument \'entityType\' must not be null.');
-    }
-
-    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
-      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
-    }
-
-    if (primaryKeyValue == null) {
-      throw new ArgumentError('Argument \'primaryKeyValue\' must not be null.');
-    }
-
-    if (primaryKeyValue is! num && primaryKeyValue is! String) {
-      throw new ArgumentError('Argument \'primaryKeyValue\' should be a value type.');
-    }
+    _validateEntityType(entityType);
+    _validatePrimaryKeyValue(primaryKeyValue);
 
     var resource = this._getResource(entityType),
         pkColumn = resource.primaryKeyProperty.columnName,
@@ -379,13 +298,7 @@ class Avocadorm {
    *     });
    */
   Future<Object> update(Entity entity) {
-    if (entity == null) {
-      throw new ArgumentError('Argument \'entity\' must not be null.');
-    }
-
-    if (entity is! Entity) {
-      throw new ArgumentError('Argument \'entity\' should be an Entity.');
-    }
+    _validateEntity(entity);
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -414,21 +327,8 @@ class Avocadorm {
    *     avo.updateFromMap(Company, httpResponse);
    */
   Future<Object> updateFromMap(Type entityType, Map data) {
-    if (entityType == null) {
-      throw new ArgumentError('Argument \'entityType\' must not be null.');
-    }
-
-    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
-      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
-    }
-
-    if (data == null) {
-      throw new ArgumentError('Argument \'data\' must not be null.');
-    }
-
-    if (data is! Map) {
-      throw new ArgumentError('Argument \'data\' should be a Map.');
-    }
+    _validateEntityType(entityType);
+    _validateDataMap(data);
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -455,13 +355,7 @@ class Avocadorm {
    *     avo.save(entity);
    */
   Future<Object> save(Entity entity) {
-    if (entity == null) {
-      throw new ArgumentError('Argument \'entity\' must not be null.');
-    }
-
-    if (entity is! Entity) {
-      throw new ArgumentError('Argument \'entity\' should be an Entity.');
-    }
+    _validateEntity(entity);
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -491,21 +385,8 @@ class Avocadorm {
    *     avo.saveFromMap(modifiedEmployee);
    */
   Future<Object> saveFromMap(Type entityType, Map data) {
-    if (entityType == null) {
-      throw new ArgumentError('Argument \'entityType\' must not be null.');
-    }
-
-    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
-      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
-    }
-
-    if (data == null) {
-      throw new ArgumentError('Argument \'data\' must not be null.');
-    }
-
-    if (data is! Map) {
-      throw new ArgumentError('Argument \'data\' should be a Map.');
-    }
+    _validateEntityType(entityType);
+    _validateDataMap(data);
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -531,13 +412,7 @@ class Avocadorm {
    *     avo.delete(myEmployee);
    */
   Future delete(Entity entity) {
-    if (entity == null) {
-      throw new ArgumentError('Argument \'entity\' must not be null.');
-    }
-
-    if (entity is! Entity) {
-      throw new ArgumentError('Argument \'entity\' should be an Entity.');
-    }
+  _validateEntity(entity);
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -565,21 +440,8 @@ class Avocadorm {
    *     avo.deleteFromMap(httpResponse);
    */
   Future deleteFromMap(Type entityType, Map data) {
-    if (entityType == null) {
-      throw new ArgumentError('Argument \'entityType\' must not be null.');
-    }
-
-    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
-      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
-    }
-
-    if (data == null) {
-      throw new ArgumentError('Argument \'data\' must not be null.');
-    }
-
-    if (data is! Map) {
-      throw new ArgumentError('Argument \'data\' should be a Map.');
-    }
+    _validateEntityType(entityType);
+    _validateDataMap(data);
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -605,21 +467,8 @@ class Avocadorm {
    *     avo.deleteById(Employee, 23);
    */
   Future deleteById(Type entityType, Object primaryKeyValue) {
-    if (entityType == null) {
-      throw new ArgumentError('Argument \'entityType\' must not be null.');
-    }
-
-    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
-      throw new ArgumentError('Argument \'entityType\' should be an Entity.');
-    }
-
-    if (primaryKeyValue == null) {
-      throw new ArgumentError('Argument \'primaryKeyValue\' must not be null.');
-    }
-
-    if (primaryKeyValue is! num && primaryKeyValue is! String) {
-      throw new ArgumentError('Argument \'primaryKeyValue\' should be a value type.');
-    }
+    _validateEntityType(entityType);
+    _validatePrimaryKeyValue(primaryKeyValue);
 
     var resource = this._getResource(entityType),
         pkColumn = resource.primaryKeyProperty.columnName,
@@ -939,6 +788,64 @@ class Avocadorm {
 
       return f;
     }).where((f) => f != null).toList();
+  }
+
+
+  // Validates an [Entity] argument.
+  static void _validateEntity(Entity entity) {
+    if (entity == null) {
+      throw new ArgumentError('Entity must not be null.');
+    }
+
+    if (entity is! Entity) {
+      throw new ArgumentError('Entity is of an invalid type.');
+    }
+  }
+
+  // Validates an [Entity] type argument.
+  static void _validateEntityType(Type entityType) {
+    if (entityType == null) {
+      throw new ArgumentError('Entity type must not be null.');
+    }
+
+    if (entityType is! Type || !reflectType(entityType).isSubtypeOf(reflectType(Entity))) {
+      throw new ArgumentError('Entity type is of an invalid type.');
+    }
+  }
+
+  // Validates a list of [Entity] type argument.
+  static void _validateEntityTypeList(List<Type> entityTypes) {
+    if (entityTypes == null) {
+      throw new ArgumentError('List of entity type must not be null.');
+    }
+
+    if (entityTypes is! Iterable) {
+      throw new ArgumentError('List of entity type is of an invalid type.');
+    }
+
+    entityTypes.forEach((et) => _validateEntityType(et));
+  }
+
+  // Validates a primary key value argument.
+  static void _validatePrimaryKeyValue(Object primaryKeyValue) {
+    if (primaryKeyValue == null) {
+      throw new ArgumentError('Primary key value must not be null.');
+    }
+
+    if (primaryKeyValue != null && primaryKeyValue is! num && primaryKeyValue is! String) {
+      throw new ArgumentError('Primary key value is of an invalid type.');
+    }
+  }
+
+  // Validates a [data] [Map] argument.
+  static void _validateDataMap(Map data) {
+    if (data == null) {
+      throw new ArgumentError('Data map must not be null.');
+    }
+
+    if (data is! Map) {
+      throw new ArgumentError('Data map is of an invalid type.');
+    }
   }
 
   // Moves up through the list of foreign keys, eliminating unwanted foreign keys.
