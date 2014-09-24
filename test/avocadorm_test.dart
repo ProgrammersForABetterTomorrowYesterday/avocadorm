@@ -807,7 +807,7 @@ void main() {
     test('throws if the entity was not added', () {
 
       var entity = new EntityC()
-            ..entityCId = 2
+            ..entityCId = '2'
             ..name = 'Entity C';
 
       expect(
@@ -926,7 +926,7 @@ void main() {
     test('throws if the entity was not added', () {
 
       var entity = new EntityC()
-            ..entityCId = 2
+            ..entityCId = '2'
             ..name = 'Entity C';
 
       expect(
