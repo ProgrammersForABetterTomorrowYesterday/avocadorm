@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:magnetfruit_avocadorm/avocadorm.dart';
-import 'package:magnetfruit_avocadorm/database_handler/mysql_database_handler.dart';
+import 'package:magnetfruit_mysql_database_handler/mysql_database_handler.dart';
 import 'entities/entities.dart';
 
 // This example can be used after executing the mysql_script.sql script.

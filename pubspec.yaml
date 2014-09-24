@@ -5,7 +5,8 @@ author: Zyrthofar <zyrthofar@magnetfruit.com>
 homepage: 'www.magnetfruit.com/avocadorm/'
 dependencies:
   magnetfruit_entity: any
-  sqljocky: 0.11.0
+  magnetfruit_database_handler: any
 dev_dependencies:
+  magnetfruit_mysql_database_handler: any
   unittest: any
   mock: any

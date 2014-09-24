@@ -4,9 +4,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:mirrors';
 import 'package:magnetfruit_entity/entity.dart';
+import 'package:magnetfruit_database_handler/database_handler.dart';
 
-part 'database_handler/database_handler.dart';
-part 'database_handler/filter.dart';
 part 'exceptions/avocadorm_exception.dart';
 part 'exceptions/resource_exception.dart';
 part 'src/property/foreign_key_property.dart';
