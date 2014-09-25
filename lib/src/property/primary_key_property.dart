@@ -1,4 +1,4 @@
-part of magnetfruit_avocadorm;
+part of property;
 
 /// A representation of an [Entity] primary key property and its database column information.
 class PrimaryKeyProperty extends Property {

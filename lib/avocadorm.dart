@@ -1,20 +1,48 @@
-///Library with everything required to create and use the Avocadorm.
-library magnetfruit_avocadorm;
+/// Allows CRUD operations on provided entities.
+///
+/// The Avocadorm allows the user to perform CRUD-like operations by linking a database to a set of entities.
+/// Entities are the classes that extend from a MagnetFruit's *Entities*. They can be coded to give all the information
+/// needed to operate on database tables.
+///
+/// To use the Avocadorm, add a dependency to `magnetfruit_avocadorm`. You also need to choose and add a dependency
+/// to a *Database Handler*, based on the type of database you use. For example,
+///
+///     dependencies:
+///       magnetfruit_avocadorm: '>=0.1.0 <0.2.0'
+///       magnetfruit_mysql_database_handler: '>=0.1.0 <0.2.0'
+///
+/// You can then import the library in your project:
+///
+///     import 'package:magnetfruit_avocadorm/avocadorm.dart';
+///     import 'package:magnetfruit_mysql_database_handler/mysql_database_handler.dart';
+///
+/// Please visit the [MagnetFruit](http://www.magnetfruit.com/) website for documentation, tutorials, examples,
+/// and information about the [Avocadorm](http://www.magnetfruit.com/avocadorm/). For information about entities,
+/// and how to code them, you can visit the [Entity](http://www.magnetfruit.com/entity/) website. For information
+/// about database handlers, including how to code one if your database of choice is not available, you can visit
+/// the [Database Handler](http://www.magnetfruit.com/databasehandler/) website.
+library avocadorm;
 
 import 'dart:async';
 import 'dart:convert';
 import 'dart:mirrors';
 import 'package:magnetfruit_database_handler/database_handler.dart';
 import 'package:magnetfruit_entity/entity.dart';
+import 'src/property/property.dart';
+import 'src/resource/resource.dart';
 
 part 'exceptions/avocadorm_exception.dart';
-part 'exceptions/resource_exception.dart';
-part 'src/property/foreign_key_property.dart';
-part 'src/property/primary_key_property.dart';
-part 'src/property/property.dart';
-part 'src/resource/resource.dart';
 
-/// An object-relational mapper (ORM), handler of CRUD operations.
+/// An object-relational mapper (ORM), providing CRUD operations to entities.
+///
+/// These operations return `Future`s, meaning code on the result will have to be done async.
+///
+/// Tests -- [Future] [Future](dart:async) [Future](async.dart) [Future](async/future.dart) [Future](async/async.dart)
+/// Tests -- [Entity](magnetfruit_entity) [Entity](magnetfruit_entity/entity.dart) [Entity](magnetfruit_entity/entity)
+/// Tests -- [Map]
+///
+///     avo.readById(Employee, 1)
+///       .then((employee) => print(employee.name));
 class Avocadorm {
 
   /// The database implementation, which handles the queries.
@@ -26,9 +54,10 @@ class Avocadorm {
   /**
    * Creates an instance of an ORM.
    *
-   * This avocadorm is linked to the specified [DatabaseHandler], starts empty of [Entity]s, and will have to be
+   * The Avocadorm is linked to the specified `DatabaseHandler`, starts empty of `Entity`s, and will have to be
    * populated before being usable.
-   * Throws an [ArgumentError] if the [DatabaseHandler] is null or invalid.
+   *
+   * Throws an [ArgumentError] if the `DatabaseHandler` is null or invalid.
    */
   Avocadorm(DatabaseHandler databaseHandler) {
     if (databaseHandler == null) {
@@ -44,12 +73,14 @@ class Avocadorm {
   }
 
   /**
-   * Adds a library of [Entity] class to this ORM.
+   * Adds an `Entity` library to this ORM.
    *
-   * All [Entity] classes found in specified library will be added to this ORM as [Resource]s. Library should be
-   * imported to the project using Avocadorm. Returns how many [Entity] classes were added.
+   * All `Entity` classes found in specified library will be added to this ORM as [Resource]s. The library should be
+   * imported to the project, for example by means of `import 'entities/entities.dart';`. Returns how many `Entity`
+   * classes were added.
+   *
    * Throws an [ArgumentError] if the library name is null or invalid.
-   * Throws a [ResourceException] if an [Entity] class was incorectly coded.
+   * Throws a [ResourceException] if an `Entity` class was incorectly coded.
    *
    *     avo.addEntitiesInLibrary('entities');
    */
@@ -86,12 +117,13 @@ class Avocadorm {
   }
 
   /**
-   * Adds a list of [Entity] class to this ORM.
+   * Adds a list of `Entity` class to this ORM.
    *
-   * All [Entity] classes in the specified list will be added to this ORM as [Resource]s. Returns how many [Entity]
+   * All `Entity` classes in the specified list will be added to this ORM as `Resource`s. Returns how many `Entity`
    * classes were added.
+   *
    * Throws an [ArgumentError] if the list is null or contains invalid items.
-   * Throws a [ResourceException] if an [Entity] class was incorectly coded.
+   * Throws a [ResourceException] if an `Entity` class was incorectly coded.
    *
    *     avo.addEntities([Employee, Company]);
    */
@@ -112,13 +144,14 @@ class Avocadorm {
   }
 
   /**
-   * Adds an [Entity] class to this ORM.
+   * Adds an `Entity` class to this ORM.
    *
-   * The specified [Entity] class will be added to this ORM as a [Resource]. Returns 0 or 1, indicating whether
-   * the [Entity] class was successfully added. Returns a number instead of a boolean for consistency with the
+   * The specified `Entity` class will be added to this ORM as a `Resource`. Returns 0 or 1, indicating whether
+   * the `Entity` class was successfully added. Returns a number instead of a boolean for consistency with the
    * methods [addEntitiesInLibrary] and [addEntities].
-   * Throws an [ArgumentError] if the [Entity] class was null or invalid.
-   * Throws a [ResourceException] if the [Entity] class was incorectly coded.
+   *
+   * Throws an [ArgumentError] if the `Entity` class was null or invalid.
+   * Throws a [ResourceException] if the `Entity` class was incorectly coded.
    *
    *     avo.addEntity(EmployeeType);
    */
@@ -137,16 +170,17 @@ class Avocadorm {
 
 
   /**
-   * Creates the specified [Entity] instance in the database.
+   * Creates the specified `Entity` instance in the database.
    *
-   * The [Entity] instance's primary key value will be set to null. If an [Entity] is to be saved to the database
-   * with the same primary key value, the [save] method should be used. Returns a [Future] containing the primary
+   * The `Entity` instance's primary key value will be set to null. If an `Entity` is to be saved to the database
+   * with the same primary key value, the [save] method should be used. Returns a `Future` containing the primary
    * key value of the new table row.
-   * Throws an [ArgumentError] if the [Entity] instance is null or invalid.
+   *
+   * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
    * Throws an [AvocadormException] if the primary key value already exists in the database.
    *
    *     var entity = new Employee('Doe', 'John');
-   *     avo.create(entity);
+   *     avo.create(entity).then( ... );
    */
   Future<Object> create(Entity entity) {
     _validateEntity(entity);
@@ -170,15 +204,18 @@ class Avocadorm {
   }
 
   /**
-   * Creates the [Entity] specified by the [data] [Map] argument in the database.
+   * Creates the `Entity` specified by the [data] argument in the database.
    *
-   * The [data] argument is a [Map] with the same properties as the specified [Entity] class. This [Map] will
-   * typically be based on a JSON, and usage of the [create] method is prefered. The primary key value will be set
-   * to null. Returns a [Future] containing the primary key value of the new table row.
-   * Throws an [ArgumentError] if the [Entity] class or [data] [Map] are null or invalid.
+   * This is a helper method for [create], typically used when dealing with an HTTP request, which has a JSON string.
+   * Usage of [create] is prefered in normal scenarios.
+   *
+   * The [data] argument is a [Map] with the same properties as the specified `Entity` class. The primary key value
+   * will be set to null. Returns a `Future` containing the primary key value of the new table row.
+   *
+   * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
    * Throws an [AvocadormException] if the primary key value already exists in the database.
    *
-   *     avo.createFromMap(httpResponse);
+   *     avo.createFromMap(httpResponse).then( ... );
    */
   Future<Object> createFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
@@ -201,13 +238,14 @@ class Avocadorm {
   }
 
   /**
-   * Verifies the presence of the specified [Entity] class having a specific primary key value in the database.
+   * Verifies whether the specified `Entity` class possess a specific primary key value in the database.
    *
-   * Returns a [Future] containing a boolean value indicating whether the specified [Entity] class can be found
+   * Returns a `Future` containing a boolean value indicating whether the specified `Entity` class can be found
    * in the database with the given primary key value.
-   * Throws an [ArgumentError] if the [Entity] class or [primaryKeyValue] are null or invalid.
    *
-   *     avo.hasId(Employee, value);
+   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
+   *
+   *     avo.hasId(Employee, value).then( ... );
    */
   Future<bool> hasId(Type entityType, Object primaryKeyValue) {
     _validateEntityType(entityType);
@@ -222,14 +260,15 @@ class Avocadorm {
   }
 
   /**
-   * Verifies how many of the specified [Entity] class there are in the database.
+   * Verifies how many of the specified `Entity` class there are in the database.
    *
-   * Returns how many table rows of the specified [Entity] class there are. An optional list of filter can be
-   * specified. Returns a [Future] containing the number of such [Entity] classes.
-   * Throws an [ArgumentError] if the [Entity] class or [primaryKeyValue] are null or invalid.
-   * Throws an [ArgumentError] if the list of [Filter] contains invalid items.
+   * Returns how many table rows of the specified `Entity` class there are. An optional list of filter can be
+   * specified. Returns a `Future` containing the number of such `Entity` classes.
    *
-   *     avo.count(Employee, filters: [new Filter('firstName', 'John')]);
+   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
+   * Throws an [ArgumentError] if the list of `Filter` contains invalid items.
+   *
+   *     avo.count(Employee, filters: [new Filter('firstName', 'John')]).then( ... );
    */
   Future<int> count(Type entityType, {List<Filter> filters}) {
     _validateEntityType(entityType);
@@ -242,17 +281,20 @@ class Avocadorm {
   }
 
   /**
-   * Retrieves all [Entity] instances in the database.
+   * Retrieves all `Entity` instances in the database.
    *
-   * Retrieves all table rows of the specified [Entity] class matching the optional list of [Filter]. Foreign keys
-   * can also be retrieved at the same time, by specifying them in the list [foreignKeys]. Returns a [Future]
-   * containing a list of [Entity] instances.
-   * Throws an [ArgumentError] if the [Entity] class or [primaryKeyValue] are null or invalid.
-   * Throws an [ArgumentError] if the list of [Filter] contains invalid items.
+   * Retrieves all table rows of the specified `Entity` class matching the optional list of `Filter`. Foreign keys
+   * can also be retrieved at the same time, by specifying them in the list [foreignKeys]. Returns a `Future`
+   * containing a list of `Entity` instances.
    *
-   *     avo.readAll(Employee, filters: [new Filter('firstName', 'John')]);
+   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
+   * Throws an [ArgumentError] if the list of `Filter` contains invalid items.
    *
-   *     avo.readAll(Company, foreignKeys: ['employees']);
+   *     // Retrieves all employees where firstName == 'John'.
+   *     avo.readAll(Employee, filters: [new Filter('firstName', 'John')]).then( ... );
+   *
+   *     // Retrieves all companies, and their 'employees' lists.
+   *     avo.readAll(Company, foreignKeys: ['employees']).then( ... );
    */
   Future<List<Entity>> readAll(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
     _validateEntityType(entityType);
@@ -265,14 +307,15 @@ class Avocadorm {
   }
 
   /**
-   * Retrieves the [Entity] instance matching the specified primary key value.
+   * Retrieves the `Entity` instance matching the specified primary key value.
    *
-   * Retrieves the table row of the specified [Entity] class matching the given primary key value. Foreign keys
-   * can also be retrieved at the same time, by specifying them in the list [foreignKeys]. Returns a [Future]
-   * containing an [Entity] instance.
-   * Throws an [ArgumentError] if the [Entity] class or [primaryKeyValue] are null or invalid.
+   * Retrieves the table row of the specified `Entity` class matching the given primary key value. Foreign keys
+   * can also be retrieved at the same time, by specifying them in the list [foreignKeys]. Returns a `Future`
+   * containing an `Entity` instance, or `null` if no matching `Entity` could be found.
    *
-   *     avo.readById(Employee, value, foreignKeys: ['answersTo']);
+   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
+   *
+   *     avo.readById(Employee, value, foreignKeys: ['answersTo']).then( ... );
    */
   Future<Entity> readById(Type entityType, Object primaryKeyValue, {List<String> foreignKeys}) {
     _validateEntityType(entityType);
@@ -287,11 +330,12 @@ class Avocadorm {
   }
 
   /**
-   * Updates the specified [Entity] instance in the database.
+   * Updates the specified `Entity` instance in the database.
    *
-   * Updates the intended table row with the values specified in the [Entity] instance. A matching primary
-   * key value must be found. Returns a [Future] containing the primary key value of the [Entity].
-   * Throws an [ArgumentError] if the [Entity] instance is null or invalid.
+   * Updates the intended table row with the values specified in the `Entity` instance. A matching primary
+   * key value must be found. Returns a `Future` containing the primary key value of the `Entity`.
+   *
+   * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
    * Throws an [AvocadormException] if the table does not contain a matching primary key value.
    *
    *     avo.readById(Employee, 2).then((employee) {
@@ -318,15 +362,18 @@ class Avocadorm {
   }
 
   /**
-   * Updates an [Entity] class with the values from [data].
+   * Updates an `Entity` class with the values from [data].
    *
-   * Updates the intended table row with the values specified in the [data] [Map]. This is a helper method, and
-   * as such, the [update] method is the prefered way to update if not dealing with JSON. Returns a [Future]
-   * containing the primary key value of the [Entity].
-   * Throws an [ArgumentError] if the [Entity] class or [data] [Map] are null or invalid.
+   * This is a helper method for [update], typically used when dealing with an HTTP request, which has a JSON string.
+   * Usage of [update] is prefered in normal scenarios.
+   *
+   * Updates a table row with the values in [data]. A matching primary key value must be found. Returns a `Future`
+   * containing the primary key value of the `Entity`.
+   *
+   * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
    * Throws an [AvocadormException] if the table does not contain a matching primary key value.
    *
-   *     avo.updateFromMap(Company, httpResponse);
+   *     avo.updateFromMap(Company, httpResponse).then( ... );
    */
   Future<Object> updateFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
@@ -346,15 +393,16 @@ class Avocadorm {
   }
 
   /**
-   * Creates or updates the specified [Entity] instance in the database.
+   * Creates or updates the specified `Entity` instance in the database.
    *
    * Depending on whether a table row can be found with the matching primary key value, this method will create
-   * or update the specified [Entity]. Returns a [Future] containing the primary key value of the saved [Entity]
+   * or update the specified `Entity`. Returns a `Future` containing the primary key value of the saved `Entity`
    * instance.
-   * Throws an [ArgumentError] if the [Entity] instance is null or invalid.
+   *
+   * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
    *
    *     var entity = new Employee('Doe', 'Jane);
-   *     avo.save(entity);
+   *     avo.save(entity).then( ... );
    */
   Future<Object> save(Entity entity) {
     _validateEntity(entity);
@@ -376,15 +424,18 @@ class Avocadorm {
   }
 
   /**
-   * Creates or updates an [Entity] class with the values from [data].
+   * Creates or updates an `Entity` class with the values from [data].
+   *
+   * This is a helper method for [save], typically used when dealing with an HTTP request, which has a JSON string.
+   * Usage of [save] is prefered in normal scenarios.
    *
    * Depending on whether a table row can be found with the matching primary key value, this method will create
-   * or update the specified [Entity] class with the values from the [data] [Map]. This is a helper method, and
-   * as such, the [save] method is the prefered way to save if not dealing with JSON. Returns a [Future] containing
-   * the primary key value of the [Entity].
-   * Throws an [ArgumentError] if the [Entity] class or [data] [Map] are null or invalid.
+   * or update the specified `Entity` class with the values from [data]. Returns a `Future` containing the primary
+   * key value of the `Entity`.
    *
-   *     avo.saveFromMap(modifiedEmployee);
+   * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
+   *
+   *     avo.saveFromMap(modifiedEmployee).then( ... );
    */
   Future<Object> saveFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
@@ -407,11 +458,12 @@ class Avocadorm {
   /**
    * Deletes the specified entity from the database.
    *
-   * Deletes the table row matching the primary key in the specified [Entity] instance. Returns an empty [Future].
-   * Throws an [ArgumentError] if the [Entity] instance is null or invalid.
+   * Deletes the table row matching the primary key in the specified `Entity` instance. Returns an empty `Future`.
+   *
+   * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
    * Throws an [AvocadormException] if the primary key value is not found in the database.
    *
-   *     avo.delete(myEmployee);
+   *     avo.delete(myEmployee).then( ... );
    */
   Future delete(Entity entity) {
   _validateEntity(entity);
@@ -432,41 +484,15 @@ class Avocadorm {
   }
 
   /**
-   * Deletes the matching [Entity] class from the database.
+   * Deletes the matching `Entity` class from the database.
    *
-   * Deletes the table row matching the [Entity] class with the primary key value in the [data] [Map]. Returns an
-   * empty [Future].
-   * Throws an [ArgumentError] if the [Entity] instance is null or invalid.
+   * Deletes the table row matching the `Entity` class with the specified primary key value. Returns an empty
+   * `Future`.
+   *
+   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
    * Throws an [AvocadormException] if the primary key value is not found in the database.
    *
-   *     avo.deleteFromMap(httpResponse);
-   */
-  Future deleteFromMap(Type entityType, Map data) {
-    _validateEntityType(entityType);
-    _validateDataMap(data);
-
-    var resource = this._getResource(entityType),
-        pk = resource.primaryKeyProperty,
-        filters = [new Filter(pk.columnName, data[pk.name])];
-
-    return this._count(resource, filters: filters).then((count) {
-      if (count == 0) {
-        throw new AvocadormException('Can not delete entity - primary key value is not in the database.');
-      }
-
-      return this._delete(resource, data);
-    });
-  }
-
-  /**
-   * Deletes the matching [Entity] class from the database.
-   *
-   * Deletes the table row matching the [Entity] class with the specified primary key value. Returns an empty
-   * [Future].
-   * Throws an [ArgumentError] if the [Entity] instance is null or invalid.
-   * Throws an [AvocadormException] if the primary key value is not found in the database.
-   *
-   *     avo.deleteById(Employee, 23);
+   *     avo.deleteById(Employee, 23).then( ... );
    */
   Future deleteById(Type entityType, Object primaryKeyValue) {
     _validateEntityType(entityType);
@@ -482,6 +508,38 @@ class Avocadorm {
       }
 
       return this._delete(resource, this._convertFromEntity(entities.first));
+    });
+  }
+
+  /**
+   * Deletes the matching `Entity` class from the database.
+   *
+   * This is a helper method for [delete], typically used when dealing with an HTTP request, which has a JSON string.
+   * Usage of [delete] is prefered in normal scenarios. If possible, use the primary key value found in the Map, and
+   * use the [deleteById] method.
+   *
+   * Deletes the table row matching the `Entity` class with the primary key value in [data]. Returns an empty
+   * `Future`.
+   *
+   * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
+   * Throws an [AvocadormException] if the primary key value is not found in the database.
+   *
+   *     avo.deleteFromMap(httpResponse).then( ... );
+   */
+  Future deleteFromMap(Type entityType, Map data) {
+    _validateEntityType(entityType);
+    _validateDataMap(data);
+
+    var resource = this._getResource(entityType),
+        pk = resource.primaryKeyProperty,
+        filters = [new Filter(pk.columnName, data[pk.name])];
+
+    return this._count(resource, filters: filters).then((count) {
+      if (count == 0) {
+        throw new AvocadormException('Can not delete entity - primary key value is not in the database.');
+      }
+
+      return this._delete(resource, data);
     });
   }
 

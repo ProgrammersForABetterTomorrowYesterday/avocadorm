@@ -1,4 +1,7 @@
-part of magnetfruit_avocadorm;
+library property;
+
+part 'primary_key_property.dart';
+part 'foreign_key_property.dart';
 
 /// A representation of an [Entity] property and its database column information.
 class Property {

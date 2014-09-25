@@ -2,11 +2,11 @@ name: magnetfruit_avocadorm
 version: 0.1.0
 description: 'Lightweight ORM, connecting entities and database in a CRUD manner.'
 author: Zyrthofar <zyrthofar@magnetfruit.com>
-homepage: 'www.magnetfruit.com/avocadorm/'
+homepage: 'http://www.magnetfruit.com/avocadorm/'
 dependencies:
-  magnetfruit_entity: any
-  magnetfruit_database_handler: any
+  magnetfruit_entity: ">=0.1.0 <0.2.0"
+  magnetfruit_database_handler: ">=0.1.0 <0.2.0"
 dev_dependencies:
-  magnetfruit_mysql_database_handler: any
+  magnetfruit_mysql_database_handler: ">=0.1.0 <0.2.0"
   unittest: any
   mock: any

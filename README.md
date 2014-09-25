@@ -1,14 +1,17 @@
 #Avocadorm
 
-Avocadorm is an [object-relational mapper](http://en.wikipedia.org/wiki/Object-relational_mapping) (ORM), used to link database tables to [Dart](http://www.dartlang.org/) objects. Its main focus is to be easy and quick to use. This is achieved by placing all database-related information in the Entity class.
+Avocadorm is an [object-relational mapper](http://en.wikipedia.org/wiki/Object-relational_mapping) (ORM), used to
+link database tables to [Dart](http://www.dartlang.org/) objects. Its main focus is to be easy and quick to use.
+This is achieved by placing all database-related information in the Entity class.
 
-* [Homepage](http://www.magnetfruit.com/avocadorm) (not valid yet)
-* [Documentation](http://www.magnetfruit.com/avocadorm/doc) (not valid yet)
-* [GitHub Repository](https://github.com/magnetfruit/avocadorm)
-* [Pub package](https://pub.dartlang.org/packages/magnetfruit_avocadorm)
+*  [Homepage](http://www.magnetfruit.com/avocadorm) (not valid yet)
+*  [Documentation](http://www.magnetfruit.com/avocadorm/doc) (not valid yet)
+*  [GitHub Repository](https://github.com/magnetfruit/avocadorm)
+*  [Pub package](https://pub.dartlang.org/packages/magnetfruit_avocadorm)
 
 ##Required dependencies##
-In order to use the Avocadorm, add the dependency in the *pubspec.yaml*, along with your database handler of choice, for example:
+In order to use the Avocadorm, add the dependency in the *pubspec.yaml*, along with your database handler of choice,
+for example:
 
 ```
 dependencies:
@@ -17,7 +20,8 @@ dependencies:
 ```
 
 ##Entity class
-Entity classes are built to give all the information needed to create queries for the database. This is an example of a *company.dart* file:
+Entity classes are built to give all the information needed to create queries for the database. This is an example
+of a *company.dart* file:
 
 ```dart
 part of entities;
@@ -43,17 +47,20 @@ class Company extends Entity {
 }
 ```
 
-###Entity interface
-Required. The entity classes must extend from the **Entity** class.
-
-###Table metadata
-Required. Annotate the entity class with a **Table** metadata. The Table metadata's argument is the name of the database table.
-
-###Column metadata
-Annotate the entity properties with a **Column** metadata. Properties that do not have this will not be mapped to a database table column, and will be skipped. This means you can add constructors, properties, and methods to an entity class that have nothing to do with the database.
+*  **Entity interface**
+   Required. The entity classes must extend from the **Entity** class.
+*  **Table metadata**
+   Required. Annotate the entity class with a **Table** metadata. The Table metadata's argument is the name of the
+   database table.
+*  **Column metadata**
+   Annotate the entity properties with a **Column** metadata. Properties that do not have this will not be mapped to
+   a database table column, and will be skipped. This means you can add constructors, properties, and methods to an
+   entity class that have nothing to do with the database.
 
 ##Entity library
-You can import the entity classes one by one to your project, but the easiest way to gather entities together is to create an entity library. This is a file, for example named *entities.dart*, that will contain the entities that the Avocadorm will map. A very simple entity library could look like this:
+You can import the entity classes one by one to your project, but the easiest way to gather entities together is to
+create an entity library. This is a file, for example named *entities.dart*, that will contain the entities that the
+Avocadorm will map. A very simple entity library could look like this:
 
 ```dart
 library entities;
@@ -68,10 +75,12 @@ part 'employee_type.dart';
 
 This gives you only one file to import to your project, and they can all be added to the Avocadorm in one line of code.
 
-If you have many entities, it is suggested that they, with the entity library file, be placed in their own folder, for example */entities*.
+If you have many entities, it is suggested that they, with the entity library file, be placed in their own folder,
+for example */entities*.
 
 ##Constructing the Avocadorm
-When the entity classes are finished, they can be given to the Avocadorm. Create the Avocadorm by correctly setting a database handler, then add the entities to it.
+When the entity classes are finished, they can be given to the Avocadorm. Create the Avocadorm by correctly setting
+a database handler, then add the entities to it.
 
 ```dart
 avocadorm = new Avocadorm(databaseHandler)
@@ -79,13 +88,15 @@ avocadorm = new Avocadorm(databaseHandler)
 ```
 
 ##Usage
-With a valid Avocadorm working, basic CRUD operations, and a few others, can be made. See the respective documentation for more information.
-- Creating;
-- Counting;
-- Reading;
-- Updating;
-- Saving;
-- Deleting.
+With a valid Avocadorm working, basic CRUD operations, and a few others, can be made. See the respective documentation
+for more information.
+
+*  Creating
+*  Counting
+*  Reading
+*  Updating
+*  Saving
+*  Deleting
 
 ##Usage example
 ```
@@ -101,6 +112,3 @@ avocadorm.create(newEmployee).then((pkValue) {
 ```
 
 See the project in [/example](https://github.com/magnetfruit/avocadorm/tree/master/example) for more.
-
-
-[![Build Status](https://travis-ci.org/magnetfruit/avocadorm.svg?branch=master)](https://travis-ci.org/magnetfruit/avocadorm)

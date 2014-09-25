@@ -1,4 +1,4 @@
-part of magnetfruit_avocadorm;
+part of property;
 
 /// A representation of an [Entity] foreign key property and information on how it behaves.
 class ForeignKeyProperty extends Property {

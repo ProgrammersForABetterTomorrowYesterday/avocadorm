@@ -1,4 +1,10 @@
-part of magnetfruit_avocadorm;
+library resource;
+
+import 'dart:mirrors';
+import 'package:magnetfruit_entity/entity.dart';
+import '../property/property.dart';
+
+part '../../exceptions/resource_exception.dart';
 
 /// A representation of an [Entity] class and its database table informations.
 class Resource {
