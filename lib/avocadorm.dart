@@ -1,10 +1,11 @@
+///Library with everything required to create and use the Avocadorm.
 library magnetfruit_avocadorm;
 
 import 'dart:async';
 import 'dart:convert';
 import 'dart:mirrors';
-import 'package:magnetfruit_entity/entity.dart';
 import 'package:magnetfruit_database_handler/database_handler.dart';
+import 'package:magnetfruit_entity/entity.dart';
 
 part 'exceptions/avocadorm_exception.dart';
 part 'exceptions/resource_exception.dart';
@@ -13,7 +14,7 @@ part 'src/property/primary_key_property.dart';
 part 'src/property/property.dart';
 part 'src/resource/resource.dart';
 
-/// A lightweight ORM linking [Entity] classes to a [DatabaseHandler].
+/// An object-relational mapper (ORM), handler of CRUD operations.
 class Avocadorm {
 
   /// The database implementation, which handles the queries.
