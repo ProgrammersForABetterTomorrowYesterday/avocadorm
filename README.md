@@ -1,6 +1,6 @@
 #Avocadorm
 
-Avocadorm is an [object-relational mapper](http://en.wikipedia.org/wiki/Object-relational_mapping) (ORM), used to link database tables to Dart objects. Its main focus is to be easy and quick to use. This is achieved by placing all database-related information in the Entity class. Written in [Dart](http://www.dartlang.org/).
+Avocadorm is an [object-relational mapper](http://en.wikipedia.org/wiki/Object-relational_mapping) (ORM), used to link database tables to [Dart](http://www.dartlang.org/) objects. Its main focus is to be easy and quick to use. This is achieved by placing all database-related information in the Entity class.
 
 * [Homepage](http://www.magnetfruit.com/avocadorm) (not valid yet)
 * [Documentation](http://www.magnetfruit.com/avocadorm/doc) (not valid yet)
@@ -100,7 +100,7 @@ avocadorm.create(newEmployee).then((pkValue) {
 });
 ```
 
-See the example project in */example* for more.
+See the project in [/example](https://github.com/magnetfruit/avocadorm/tree/master/example) for more.
 
-====
+
 [![Build Status](https://travis-ci.org/magnetfruit/avocadorm.svg?branch=master)](https://travis-ci.org/magnetfruit/avocadorm)
