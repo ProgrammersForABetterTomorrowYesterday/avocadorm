@@ -48,11 +48,16 @@ class Company extends Entity {
 ```
 
 *  **Entity interface**
+
    Required. The entity classes must extend from the **Entity** class.
+   
 *  **Table metadata**
+
    Required. Annotate the entity class with a **Table** metadata. The Table metadata's argument is the name of the
    database table.
+   
 *  **Column metadata**
+
    Annotate the entity properties with a **Column** metadata. Properties that do not have this will not be mapped to
    a database table column, and will be skipped. This means you can add constructors, properties, and methods to an
    entity class that have nothing to do with the database.
