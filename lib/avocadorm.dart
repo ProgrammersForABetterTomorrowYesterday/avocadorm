@@ -35,11 +35,7 @@ part 'avocadorm_exception.dart';
 
 /// An object-relational mapper (ORM), providing CRUD operations to entities.
 ///
-/// These operations return `Future`s, meaning code on the result will have to be done async.
-///
-/// Tests -- [Future] [Future](dart:async) [Future](async.dart) [Future](async/future.dart) [Future](async/async.dart)
-/// Tests -- [Entity](magnetfruit_entity) [Entity](magnetfruit_entity/entity.dart) [Entity](magnetfruit_entity/entity)
-/// Tests -- [Map]
+/// These operations return `Future`s. That means the code using the result will have to be done async.
 ///
 ///     avo.readById(Employee, 1)
 ///       .then((employee) => print(employee.name));
