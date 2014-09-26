@@ -1,11 +1,12 @@
-/// Allows CRUD operations on provided entities.
+/// Object-relational mapper (ORM), used to link database tables to Dart objects.
 ///
 /// The Avocadorm allows the user to perform CRUD-like operations by linking a database to a set of entities.
-/// Entities are the classes that extend from a MagnetFruit's *Entities*. They can be coded to give all the information
-/// needed to operate on database tables.
+/// Entities are the classes that extend from MagnetFruit's `Entity`. They can be coded to give all the information
+/// needed to operate on database tables. Since all the information is coded in the entities, there is no need for
+/// additional mapping or configuration files.
 ///
 /// To use the Avocadorm, add a dependency to `magnetfruit_avocadorm`. You also need to choose and add a dependency
-/// to a *Database Handler*, based on the type of database you use. For example,
+/// to a *Database Handler*, based on the type of database you use.
 ///
 ///     dependencies:
 ///       magnetfruit_avocadorm: '>=0.1.0 <0.2.0'
@@ -33,12 +34,16 @@ import 'src/resource/resource.dart';
 
 part 'avocadorm_exception.dart';
 
-/// An object-relational mapper (ORM), providing CRUD operations to entities.
+/// A link to a database, and a provider of CRUD operations for entities.
 ///
-/// These operations return `Future`s. That means the code using the result will have to be done async.
+/// The CRUD operations return `Future`s. This means the code using the result will have to be async. For example,
+/// if you want to retrieve a specific employee from the database, and print his name, the `print` needs to be
+/// enclosed in a `then`, as shown:
 ///
 ///     avo.readById(Employee, 1)
 ///       .then((employee) => print(employee.name));
+///
+/// See the [Dart tutorial](https://www.dartlang.org/docs/tutorials/futures/) for more information about `Future`s.
 class Avocadorm {
 
   /// The database implementation, which handles the queries.
@@ -71,8 +76,8 @@ class Avocadorm {
   /**
    * Adds an `Entity` library to this ORM.
    *
-   * All `Entity` classes found in specified library will be added to this ORM as `Resource`s. The library should be
-   * imported to the project, for example by means of `import 'entities/entities.dart';`. Returns how many `Entity`
+   * All `Entity` classes found in the specified library will be added to this ORM as `Resource`s. The library should
+   * be imported to the project, for example by means of `import 'entities/entities.dart';`. Returns how many `Entity`
    * classes were added.
    *
    * Throws an [ArgumentError] if the library name is null or invalid.
@@ -168,7 +173,7 @@ class Avocadorm {
   /**
    * Creates the specified `Entity` instance in the database.
    *
-   * The `Entity` instance's primary key value will be set to null. If an `Entity` is to be saved to the database
+   * The `Entity` instance's primary key value will be set to null. If an `Entity` is to be created to the database
    * with the same primary key value, the [save] method should be used. Returns a `Future` containing the primary
    * key value of the new table row.
    *
@@ -202,16 +207,13 @@ class Avocadorm {
   /**
    * Creates the `Entity` specified by the [data] argument in the database.
    *
-   * This is a helper method for [create], typically used when dealing with an HTTP request, which has a JSON string.
-   * Usage of [create] is prefered in normal scenarios.
-   *
-   * The [data] argument is a [Map] with the same properties as the specified `Entity` class. The primary key value
-   * will be set to null. Returns a `Future` containing the primary key value of the new table row.
+   * This is a method similar to [create], typically used when dealing with an HTTP request, which has a JSON string.
+   * Usage of [create] is prefered in normal scenarios. See the [create] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
    * Throws an [AvocadormException] if the primary key value already exists in the database.
    *
-   *     avo.createFromMap(httpResponse).then( ... );
+   *     avo.createFromMap(httpRequest).then( ... );
    */
   Future<Object> createFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
@@ -234,7 +236,7 @@ class Avocadorm {
   }
 
   /**
-   * Verifies whether the specified `Entity` class possess a specific primary key value in the database.
+   * Verifies whether an `Entity` class has a specific primary key value in the database.
    *
    * Returns a `Future` containing a boolean value indicating whether the specified `Entity` class can be found
    * in the database with the given primary key value.
@@ -261,8 +263,8 @@ class Avocadorm {
    * Returns how many table rows of the specified `Entity` class there are. An optional list of filter can be
    * specified. Returns a `Future` containing the number of such `Entity` classes.
    *
-   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
-   * Throws an [ArgumentError] if the list of `Filter` contains invalid items.
+   * Throws an [ArgumentError] if the `Entity` class is null or invalid, or if the list of `Filter` contains
+   * invalid items.
    *
    *     avo.count(Employee, filters: [new Filter('firstName', 'John')]).then( ... );
    */
@@ -280,7 +282,7 @@ class Avocadorm {
    * Retrieves all `Entity` instances in the database.
    *
    * Retrieves all table rows of the specified `Entity` class matching the optional list of `Filter`. Foreign keys
-   * can also be retrieved at the same time, by specifying them in the list [foreignKeys]. Returns a `Future`
+   * can also be retrieved by name at the same time, by specifying them in the list [foreignKeys]. Returns a `Future`
    * containing a list of `Entity` instances.
    *
    * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
@@ -290,7 +292,10 @@ class Avocadorm {
    *     avo.readAll(Employee, filters: [new Filter('firstName', 'John')]).then( ... );
    *
    *     // Retrieves all companies, and their 'employees' lists.
-   *     avo.readAll(Company, foreignKeys: ['employees']).then( ... );
+   *     avo.readAll(Company, foreignKeys: ['employees.employeeType']).then( ... );
+   *
+   * In the example above, the `'employees.employeeType'` asks the Avocadorm to retrieve the `Company`'s `employees`
+   * property for every retrieved company, and the `employeeType` property for all retrieved employee in `employees`.
    */
   Future<List<Entity>> readAll(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
     _validateEntityType(entityType);
@@ -360,16 +365,13 @@ class Avocadorm {
   /**
    * Updates an `Entity` class with the values from [data].
    *
-   * This is a helper method for [update], typically used when dealing with an HTTP request, which has a JSON string.
-   * Usage of [update] is prefered in normal scenarios.
-   *
-   * Updates a table row with the values in [data]. A matching primary key value must be found. Returns a `Future`
-   * containing the primary key value of the `Entity`.
+   * This is a method similar to [update], typically used when dealing with an HTTP request, which has a JSON string.
+   * Usage of [update] is prefered in normal scenarios. See the [update] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
    * Throws an [AvocadormException] if the table does not contain a matching primary key value.
    *
-   *     avo.updateFromMap(Company, httpResponse).then( ... );
+   *     avo.updateFromMap(Company, httpRequest).then( ... );
    */
   Future<Object> updateFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
@@ -392,8 +394,9 @@ class Avocadorm {
    * Creates or updates the specified `Entity` instance in the database.
    *
    * Depending on whether a table row can be found with the matching primary key value, this method will create
-   * or update the specified `Entity`. Returns a `Future` containing the primary key value of the saved `Entity`
-   * instance.
+   * or update the specified `Entity`. Contrary to the [create] method, creating an entity with the [save] method
+   * will keep the specified primary key value (if possible by the database). Returns a `Future` containing the
+   * primary key value of the saved `Entity` instance.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
    *
@@ -422,16 +425,12 @@ class Avocadorm {
   /**
    * Creates or updates an `Entity` class with the values from [data].
    *
-   * This is a helper method for [save], typically used when dealing with an HTTP request, which has a JSON string.
-   * Usage of [save] is prefered in normal scenarios.
-   *
-   * Depending on whether a table row can be found with the matching primary key value, this method will create
-   * or update the specified `Entity` class with the values from [data]. Returns a `Future` containing the primary
-   * key value of the `Entity`.
+   * This is a method similar to [save], typically used when dealing with an HTTP request, which has a JSON string.
+   * Usage of [save] is prefered in normal scenarios. See the [save] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
    *
-   *     avo.saveFromMap(modifiedEmployee).then( ... );
+   *     avo.saveFromMap(Employee, httpRequest).then( ... );
    */
   Future<Object> saveFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
@@ -454,7 +453,8 @@ class Avocadorm {
   /**
    * Deletes the specified entity from the database.
    *
-   * Deletes the table row matching the primary key in the specified `Entity` instance. Returns an empty `Future`.
+   * Deletes the table row matching the primary key in the specified `Entity` instance. A matching primary key value
+   * must be found. Returns an empty `Future`.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
    * Throws an [AvocadormException] if the primary key value is not found in the database.
@@ -482,8 +482,8 @@ class Avocadorm {
   /**
    * Deletes the matching `Entity` class from the database.
    *
-   * Deletes the table row matching the `Entity` class with the specified primary key value. Returns an empty
-   * `Future`.
+   * Deletes the table row matching the `Entity` class with the specified primary key value. A matching primary key
+   * value must be found. Returns an empty `Future`.
    *
    * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
    * Throws an [AvocadormException] if the primary key value is not found in the database.
@@ -510,17 +510,13 @@ class Avocadorm {
   /**
    * Deletes the matching `Entity` class from the database.
    *
-   * This is a helper method for [delete], typically used when dealing with an HTTP request, which has a JSON string.
-   * Usage of [delete] is prefered in normal scenarios. If possible, use the primary key value found in the Map, and
-   * use the [deleteById] method.
-   *
-   * Deletes the table row matching the `Entity` class with the primary key value in [data]. Returns an empty
-   * `Future`.
+   * This is a method similar to [delete], typically used when dealing with an HTTP request, which has a JSON string.
+   * Usage of [delete] is prefered in normal scenarios. See the [delete] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
    * Throws an [AvocadormException] if the primary key value is not found in the database.
    *
-   *     avo.deleteFromMap(httpResponse).then( ... );
+   *     avo.deleteFromMap(httpRequest).then( ... );
    */
   Future deleteFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);

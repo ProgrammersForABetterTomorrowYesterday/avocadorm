@@ -1,3 +1,7 @@
+**0.1.3** (2014-09-29)
+
+*  Work on documentation.
+
 **0.1.2** (2014-09-26)
 
 *  Some fiddling with documentation.

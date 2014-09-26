@@ -47,18 +47,20 @@ class Company extends Entity {
 }
 ```
 
-*  **Entity interface** Required. The entity classes must extend from the **Entity** class.
+*  **Entity interface** Required. The entity classes must extend from the `Entity` class.
    
-*  **Table metadata** Required. Annotate the entity class with a **Table** metadata. The Table metadata's argument is the name of the
-   database table.
+*  **Table metadata** Required. Annotate the entity class with a `Table` metadata. The Table metadata's argument is
+   the name of the database table.
    
-*  **Column metadata** Annotate the entity properties with a **Column** metadata. Properties that do not have this will not be mapped to
-   a database table column, and will be skipped. This means you can add constructors, properties, and methods to an
-   entity class that have nothing to do with the database.
+*  **Column metadata** Annotate the entity properties with a `Column` metadata. Properties that do not have this will
+   not be mapped to a database table column, and will be skipped. This means you can add constructors, properties, and
+   methods to an entity class that have nothing to do with the database. For normal and primary key columns, the
+   argument is the database table column. For foreign key properties, the argument is the target property (see
+   documentation for more information).
 
 ##Entity library
 You can import the entity classes one by one to your project, but the easiest way to gather entities together is to
-create an entity library. This is a file, for example named *entities.dart*, that will contain the entities that the
+create an entity library. This is a file, for example named *entities.dart*, that contains the entities that the
 Avocadorm will map. A very simple entity library could look like this:
 
 ```dart
@@ -78,8 +80,8 @@ If you have many entities, it is suggested that they, with the entity library fi
 for example */entities*.
 
 ##Constructing the Avocadorm
-When the entity classes are finished, they can be given to the Avocadorm. Create the Avocadorm by correctly setting
-a database handler, then add the entities to it.
+When the entity classes are coded, they can be given to the Avocadorm. Create the Avocadorm by correctly setting a
+database handler, then add the entities to it.
 
 ```dart
 avocadorm = new Avocadorm(databaseHandler)
@@ -87,15 +89,15 @@ avocadorm = new Avocadorm(databaseHandler)
 ```
 
 ##Usage
-With a valid Avocadorm working, basic CRUD operations, and a few others, can be made. See the respective documentation
-for more information.
+With a valid Avocadorm working, basic CRUD operations (and a few others) can be performed. See the respective
+documentation for more information.
 
-*  Creating
-*  Counting
-*  Reading
-*  Updating
-*  Saving
-*  Deleting
+*  **Creating** Creates a new entity, regardless of the entity's primary key value.
+*  **Counting** Counts how many entities there are, optionally based on a filter.
+*  **Reading** Retrieves entities, optionally based on a filter and a list of foreign keys to retrieve.
+*  **Updating** Updates an existing entity.
+*  **Saving** Creates or updates an entity.
+*  **Deleting** Deletes an existing entity.
 
 ##Usage example
 ```
@@ -110,4 +112,5 @@ avocadorm.create(newEmployee).then((pkValue) {
 });
 ```
 
-See the project in [/example](https://github.com/magnetfruit/avocadorm/tree/master/example) for more.
+See the [documentation](http://www.magnetfruit.com/avocadorm/doc), [tutorial](http://www.magnetfruit.com/avocadorm/tutorial),
+or the github's [/example](https://github.com/magnetfruit/avocadorm/tree/master/example) project for more information.
