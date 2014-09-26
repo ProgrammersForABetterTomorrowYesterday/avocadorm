@@ -1,7 +1,7 @@
 #Avocadorm
 
 Avocadorm is an [object-relational mapper](http://en.wikipedia.org/wiki/Object-relational_mapping) (ORM), used to
-link database tables to [Dart](http://www.dartlang.org/) objects. Its main focus is to be easy and quick to use.
+link database tables to [Dart](http://www.dartlang.org/) objects. Its main focus is to be quick and easy to use.
 This is achieved by placing all database-related information in the Entity class.
 
 *  [Homepage](http://www.magnetfruit.com/avocadorm) (not valid yet)
@@ -47,18 +47,12 @@ class Company extends Entity {
 }
 ```
 
-*  **Entity interface**
-
-   Required. The entity classes must extend from the **Entity** class.
+*  **Entity interface** Required. The entity classes must extend from the **Entity** class.
    
-*  **Table metadata**
-
-   Required. Annotate the entity class with a **Table** metadata. The Table metadata's argument is the name of the
+*  **Table metadata** Required. Annotate the entity class with a **Table** metadata. The Table metadata's argument is the name of the
    database table.
    
-*  **Column metadata**
-
-   Annotate the entity properties with a **Column** metadata. Properties that do not have this will not be mapped to
+*  **Column metadata** Annotate the entity properties with a **Column** metadata. Properties that do not have this will not be mapped to
    a database table column, and will be skipped. This means you can add constructors, properties, and methods to an
    entity class that have nothing to do with the database.
 

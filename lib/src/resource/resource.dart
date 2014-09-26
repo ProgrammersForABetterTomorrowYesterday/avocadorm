@@ -1,27 +1,36 @@
+/// Internal library used to keep information about an `Entity` and the database table it is linked to.
 library resource;
 
 import 'dart:mirrors';
 import 'package:magnetfruit_entity/entity.dart';
 import '../property/property.dart';
 
-part '../../exceptions/resource_exception.dart';
+part 'resource_exception.dart';
 
 /// A representation of an [Entity] class and its database table informations.
+///
+/// This is an internal implementation, and as such, no garantee can be given concerning breaking changes.
+/// Constructors, properties, and methods should not be available to the user.
+///
+/// A [Resource] keeps handy all information needed to perform CRUD operations on a specific database table.
 class Resource {
 
-  /// The name of the [Entity].
+  /// The name of the `Entity`.
   String name;
 
-  /// The type of the [Entity].
+  /// The type of the `Entity`.
   Type type;
 
   /// The name of the table in the database.
   String tableName;
 
-  /// The list of properties contained in the [Entity].
+  /// The list of properties contained in the `Entity`.
   List<Property> properties;
 
-  /// The primary key property that the [Entity] will be identified with.
+  /// The primary key property that the `Entity` will be identified with.
+  ///
+  /// There can currently be only one primary key property on an `Entity`. While additional primary keys can be
+  /// set, only the first one will be used.
   Property get primaryKeyProperty => this.properties.firstWhere((f) => f is PrimaryKeyProperty, orElse: null);
 
   /// The normal properties contained in the [Entity].
@@ -36,9 +45,10 @@ class Resource {
   /**
    * Creates an instance of a [Resource].
    *
-   * From the specified [Entity] class, creates a [Resource] that will become the link between that [Entity] and
+   * From the specified `Entity` class, creates a [Resource] that will become the link between that `Entity` and
    * the database table.
-   * Throws a [ResourceException] if the [Entity] class was incorrectly coded.
+   *
+   * Throws a [ResourceException] if the `Entity` class was incorrectly coded.
    */
   Resource(Type entityType) {
     var classMirror = reflectClass(entityType),

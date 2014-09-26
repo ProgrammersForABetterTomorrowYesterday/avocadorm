@@ -1,6 +1,6 @@
 name: magnetfruit_avocadorm
-version: 0.1.0
-description: 'Lightweight ORM, connecting entities and database in a CRUD manner.'
+version: 0.1.1
+description: 'Dart ORM, linking entities and database in a CRUD operation.'
 author: Zyrthofar <zyrthofar@magnetfruit.com>
 homepage: 'http://www.magnetfruit.com/avocadorm/'
 dependencies:

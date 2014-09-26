@@ -31,7 +31,7 @@ import 'package:magnetfruit_entity/entity.dart';
 import 'src/property/property.dart';
 import 'src/resource/resource.dart';
 
-part 'exceptions/avocadorm_exception.dart';
+part 'avocadorm_exception.dart';
 
 /// An object-relational mapper (ORM), providing CRUD operations to entities.
 ///
@@ -75,7 +75,7 @@ class Avocadorm {
   /**
    * Adds an `Entity` library to this ORM.
    *
-   * All `Entity` classes found in specified library will be added to this ORM as [Resource]s. The library should be
+   * All `Entity` classes found in specified library will be added to this ORM as `Resource`s. The library should be
    * imported to the project, for example by means of `import 'entities/entities.dart';`. Returns how many `Entity`
    * classes were added.
    *
