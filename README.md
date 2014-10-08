@@ -18,8 +18,9 @@ avocadorm = new Avocadorm(databaseHandler)
 ```
 
 ##Usage
-With a valid Avocadorm in your hands, CRUD operations (and a few others) can be performed. See the
-[documentation](http://www.magnetfruit.com/avocadorm/documentation.html) for more information about these methods.
+With a valid Avocadorm in your hands, [CRUD](http://en.wikipedia.org/wiki/Create,_read,_update_and_delete) operations
+(and a few others) can be performed. See the [documentation](http://www.magnetfruit.com/avocadorm/documentation.html)
+for more information about these methods.
 
 With the avocadorm, you can
 
@@ -40,7 +41,7 @@ avocadorm.create(newEmployee).then((pkValue) {
 });
 ```
 
-See the [examples](http://www.magnetfruit.com/avocadorm/examples) page or the ready-to-use GitHub's
+See the [examples](http://www.magnetfruit.com/avocadorm/examples.html) page or the ready-to-use GitHub's
 [/example](https://github.com/magnetfruit/avocadorm/tree/master/example) project for more examples.
 
 ##Dependencies
