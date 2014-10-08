@@ -236,28 +236,6 @@ class Avocadorm {
   }
 
   /**
-   * Verifies whether an `Entity` class has a specific primary key value in the database.
-   *
-   * Returns a `Future` containing a boolean value indicating whether the specified `Entity` class can be found
-   * in the database with the given primary key value.
-   *
-   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
-   *
-   *     avo.hasId(Employee, value).then( ... );
-   */
-  Future<bool> hasId(Type entityType, Object primaryKeyValue) {
-    _validateEntityType(entityType);
-    _validatePrimaryKeyValue(primaryKeyValue);
-
-    var resource = this._getResource(entityType),
-        pkColumn = resource.primaryKeyProperty.columnName,
-        filters = [new Filter(pkColumn, primaryKeyValue)];
-
-    return this._count(resource, filters: filters)
-      .then((count) => count > 0);
-  }
-
-  /**
    * Verifies how many of the specified `Entity` class there are in the database.
    *
    * Returns how many table rows of the specified `Entity` class there are. An optional list of filter can be
@@ -279,6 +257,28 @@ class Avocadorm {
   }
 
   /**
+   * Verifies whether an `Entity` class has a specific primary key value in the database.
+   *
+   * Returns a `Future` containing a boolean value indicating whether the specified `Entity` class can be found
+   * in the database with the given primary key value.
+   *
+   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
+   *
+   *     avo.hasId(Employee, value).then( ... );
+   */
+  Future<bool> hasId(Type entityType, Object primaryKeyValue) {
+    _validateEntityType(entityType);
+    _validatePrimaryKeyValue(primaryKeyValue);
+
+    var resource = this._getResource(entityType),
+    pkColumn = resource.primaryKeyProperty.columnName,
+    filters = [new Filter(pkColumn, primaryKeyValue)];
+
+    return this._count(resource, filters: filters)
+    .then((count) => count > 0);
+  }
+
+  /**
    * Retrieves all `Entity` instances in the database.
    *
    * Retrieves all table rows of the specified `Entity` class matching the optional list of `Filter`. Foreign keys
@@ -297,7 +297,7 @@ class Avocadorm {
    * In the example above, the `'employees.employeeType'` asks the Avocadorm to retrieve the `Company`'s `employees`
    * property for every retrieved company, and the `employeeType` property for all retrieved employee in `employees`.
    */
-  Future<List<Entity>> readAll(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
+  Future<List<Entity>> read(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
     _validateEntityType(entityType);
     _validateFilterList(filters);
 

@@ -518,7 +518,7 @@ void main() {
 
     test('returns all entities of the specified type', () {
 
-      avocadorm.readAll(EntityA).then(expectAsync((entityAs) {
+      avocadorm.read(EntityA).then(expectAsync((entityAs) {
 
         expect(
             entityAs,
@@ -568,12 +568,12 @@ void main() {
     test('throws if the entity type is invalid', () {
 
       expect(
-          () => avocadorm.readAll(null),
+          () => avocadorm.read(null),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
 
       expect(
-          () => avocadorm.readAll('Invalid Type'),
+          () => avocadorm.read('Invalid Type'),
           throwsArgumentError,
           reason: 'An entity type of an invalid type should throw an exception.');
 
@@ -606,7 +606,7 @@ void main() {
     test('throws if the entity was not added', () {
 
       expect(
-          () => avocadorm.readAll(EntityC),
+          () => avocadorm.read(EntityC),
           throwsA(new isInstanceOf<AvocadormException>()),
           reason: 'A non-existant entity should throw an exception.');
 
@@ -627,7 +627,7 @@ void main() {
 
     test('returns all entities matching the filter', () {
 
-      avocadorm.readAll(EntityA, filters: [new Filter('entityBId', 2)]).then(expectAsync((entityAs) {
+      avocadorm.read(EntityA, filters: [new Filter('entityBId', 2)]).then(expectAsync((entityAs) {
 
         expect(
             entityAs.length,
@@ -1299,7 +1299,7 @@ void main() {
     test('throws if the entity was not added', () {
 
       var entity = new EntityC()
-            ..entityCId = 2
+            ..entityCId = '2'
             ..name = 'Entity C';
 
       expect(
@@ -1362,7 +1362,7 @@ void main() {
 
       avocadorm.deleteById(EntityA, 4).then(expectAsync((r) {
 
-        avocadorm.readAll(EntityC, filters: [new Filter('entityAId', 4)]).then(expectAsync((entityCs) {
+        avocadorm.read(EntityC, filters: [new Filter('entityAId', 4)]).then(expectAsync((entityCs) {
 
           expect(
               entityCs.length,
