@@ -289,10 +289,10 @@ class Avocadorm {
    * Throws an [ArgumentError] if the list of `Filter` contains invalid items.
    *
    *     // Retrieves all employees where firstName == 'John'.
-   *     avo.readAll(Employee, filters: [new Filter('firstName', 'John')]).then( ... );
+   *     avo.read(Employee, filters: [new Filter('firstName', 'John')]).then( ... );
    *
    *     // Retrieves all companies, and their 'employees' lists.
-   *     avo.readAll(Company, foreignKeys: ['employees.employeeType']).then( ... );
+   *     avo.read(Company, foreignKeys: ['employees.employeeType']).then( ... );
    *
    * In the example above, the `'employees.employeeType'` asks the Avocadorm to retrieve the `Company`'s `employees`
    * property for every retrieved company, and the `employeeType` property for all retrieved employee in `employees`.
