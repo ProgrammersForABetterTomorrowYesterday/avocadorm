@@ -1,27 +1,28 @@
-/// Object-relational mapper (ORM), used to link database tables to Dart objects.
-///
-/// The Avocadorm allows the user to perform CRUD-like operations by linking a database to a set of entities.
-/// Entities are the classes that extend from MagnetFruit's `Entity`. They can be coded to give all the information
-/// needed to operate on database tables. Since all the information is coded in the entities, there is no need for
-/// additional mapping or configuration files.
-///
-/// To use the Avocadorm, add a dependency to `magnetfruit_avocadorm`. You also need to choose and add a dependency
-/// to a *Database Handler*, based on the type of database you use.
-///
-///     dependencies:
-///       magnetfruit_avocadorm: '>=0.1.0 <0.2.0'
-///       magnetfruit_mysql_database_handler: '>=0.1.0 <0.2.0'
-///
-/// You can then import the library in your project:
-///
-///     import 'package:magnetfruit_avocadorm/avocadorm.dart';
-///     import 'package:magnetfruit_mysql_database_handler/mysql_database_handler.dart';
-///
-/// Please visit the [MagnetFruit](http://www.magnetfruit.com/) website for documentation, tutorials, examples,
-/// and information about the [Avocadorm](http://www.magnetfruit.com/avocadorm/). For information about entities,
-/// and how to code them, you can visit the [Entity](http://www.magnetfruit.com/entity/) website. For information
-/// about database handlers, including how to code one if your database of choice is not available, you can visit
-/// the [Database Handler](http://www.magnetfruit.com/databasehandler/) website.
+/**
+ * ORM to perform CRUD operations on entities.
+ *
+ * The Avocadorm allows the user to perform CRUD operations by linking a database to a set of entities. They can be
+ * coded to give all the information needed to operate on database tables. Since all the information is coded in the
+ * entities, there is no need for additional mapping or configuration files.
+ *
+ * To use the Avocadorm, add a dependency to `magnetfruit_avocadorm`. You also need to choose and add a dependency
+ * to a *Database Handler*, based on the type of database you use.
+ *
+ *     dependencies:
+ *       magnetfruit_avocadorm: '>=0.1.0 <0.2.0'
+ *       magnetfruit_mysql_database_handler: '>=0.1.0 <0.2.0'
+ *
+ * You can then import the library in your project.
+ *
+ *     import 'package:magnetfruit_avocadorm/avocadorm.dart';
+ *     import 'package:magnetfruit_mysql_database_handler/mysql_database_handler.dart';
+ *
+ * Please visit the [magnetfruit](http://www.magnetfruit.com/) website for documentation, examples, and information
+ * about the [avocadorm](http://www.magnetfruit.com/avocadorm/). For information about entities, and how to code
+ * them, you can visit the [entity](http://www.magnetfruit.com/entity/) website. For information about database
+ * handlers, including how to code one if your database of choice is not available, you can visit the
+ * [database handler](http://www.magnetfruit.com/databasehandler/) website.
+ */
 library avocadorm;
 
 import 'dart:async';
@@ -54,8 +55,7 @@ class Avocadorm {
   /**
    * Creates an instance of an ORM.
    *
-   * The Avocadorm is linked to the specified `DatabaseHandler`, starts empty of `Entity`s, and will have to be
-   * populated before being usable.
+   * The Avocadorm is linked to the specified `DatabaseHandler` and has to be given entities before being usable.
    *
    * Throws an [ArgumentError] if the `DatabaseHandler` is null or invalid.
    */
