@@ -3,6 +3,8 @@ library avocadorm_test;
 import 'dart:async';
 import 'dart:math';
 import 'package:magnetfruit_avocadorm/avocadorm.dart';
+import 'package:magnetfruit_avocadorm/exceptions/avocadorm_exception.dart';
+import 'package:magnetfruit_avocadorm/exceptions/resource_exception.dart';
 import 'package:magnetfruit_database_handler/database_handler.dart';
 import 'package:mock/mock.dart';
 import 'package:unittest/unittest.dart';
