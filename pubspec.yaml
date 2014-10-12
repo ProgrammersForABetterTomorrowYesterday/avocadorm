@@ -1,5 +1,5 @@
 name: magnetfruit_avocadorm
-version: 0.1.3
+version: 0.1.4
 description: 'ORM to perform CRUD operations on entities.'
 author: Zyrthofar <zyrthofar@magnetfruit.com>
 homepage: 'http://www.magnetfruit.com/avocadorm/'
