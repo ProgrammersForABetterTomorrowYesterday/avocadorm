@@ -15,13 +15,37 @@ part 'mock_database_handler.dart';
 
 void main() {
 
+  tearDown(()  {
+    // Clears the singleton's database handler and entities.
+    new Avocadorm().clear();
+  });
+
   group('Constructing the avocadorm', () {
 
     test('returns the instance', () {
 
       expect(
-          new Avocadorm(new MockDatabaseHandler()),
+          new Avocadorm(),
           isNotNull,
+          reason: 'Avocadorm should return a valid instance.');
+
+    });
+
+  });
+
+  group('Specifying the database handler', () {
+
+    var avocadorm;
+
+    setUp(() {
+      avocadorm = new Avocadorm();
+    });
+
+    test('accepts a valid database handler', () {
+
+      expect(
+          () => avocadorm.setDatabaseHandler(new MockDatabaseHandler()),
+          returnsNormally,
           reason: 'Avocadorm should return a valid instance.');
 
     });
@@ -29,16 +53,16 @@ void main() {
     test('throws if the database handler is null', () {
 
       expect(
-          () => new Avocadorm(null),
+          () => avocadorm.setDatabaseHandler(null),
           throwsArgumentError,
           reason: 'A null database handler should throw an exception.');
 
     });
 
-    test('throws if the entity type is invalid', () {
+    test('throws if the database handler is invalid', () {
 
       expect(
-          () => new Avocadorm('Invalid Type'),
+          () => avocadorm.setDatabaseHandler('Invalid Type'),
           throwsArgumentError,
           reason: 'A database handler of an invalid type should throw an exception.');
 
@@ -52,7 +76,8 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler());
     });
 
     test('adds the entities in the specified library and returns the count', () {
@@ -136,12 +161,143 @@ void main() {
 
   });
 
+  group('Validating the avocadorm', () {
+
+    var avocadorm;
+
+    setUp(() {
+      avocadorm = new Avocadorm();
+    });
+
+    tearDown(()  {
+      // Clears the singleton's database handler and entities.
+      avocadorm.clear();
+    });
+
+    test('is unactive if it is missing a database handler and entities', () {
+
+      expect(
+          avocadorm.isActive,
+          isFalse,
+          reason: 'The Avocadorm should not be active if the database handler and entities are missing.');
+
+    });
+
+    test('is unactive if it is missing entities', () {
+
+      avocadorm.setDatabaseHandler(new MockDatabaseHandler());
+
+      expect(
+          avocadorm.isActive,
+          isFalse,
+          reason: 'The Avocadorm should not be active if the database handler is missing.');
+
+    });
+
+    test('is unactive if it is missing a database handler', () {
+
+      avocadorm.addEntity(EntityA);
+
+      expect(
+          avocadorm.isActive,
+          isFalse,
+          reason: 'The Avocadorm should not be active if the database handler is missing.');
+
+    });
+
+    test('is active if the database handler and entities are specified', () {
+
+      avocadorm.setDatabaseHandler(new MockDatabaseHandler());
+      avocadorm.addEntity(EntityA);
+
+      expect(
+          avocadorm.isActive,
+          isTrue,
+          reason: 'The Avocadorm should be active if the database handler is specified.');
+
+    });
+
+    test('denies the operations if unactive', () {
+
+      avocadorm.addEntity(EntityA);
+
+      expect(
+          () => avocadorm.create(new EntityA()),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Creating an entity should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.createFromMap(EntityA, {}),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Creating an entity from a map should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.count(EntityA),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Counting entities should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.hasId(EntityA, 1),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Counting an entity by id should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.read(EntityA),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Reading entities should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.readById(EntityA, 1),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Reading an entity by id should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.update(new EntityA()),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Updating an entity should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.updateFromMap(EntityA, {}),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Updating an entity from a map should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.save(new EntityA()),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Saving an entity should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.saveFromMap(EntityA, {}),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Saving an entity from a map should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.delete(new EntityA()),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Deleting an entity should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.deleteById(EntityA, 1),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Deleting an entity should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.deleteFromMap(EntityA, {}),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Deleting an entity from a map should not be possible if the avocadorm is unactive.');
+
+
+    });
+
+  });
+
   group('Constructing a resource from an entity type', () {
 
     var avocadorm;
 
     setUp(() {
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler());
     });
 
     test('throws if the entity type does not have a Table metadata', () {
@@ -215,9 +371,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('ignores the specified primary key value', () {
@@ -374,9 +530,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('returns whether a specific entity exists', () {
@@ -513,9 +669,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('returns all entities of the specified type', () {
@@ -622,9 +778,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('returns all entities matching the filter', () {
@@ -648,9 +804,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('returns an entity with the specified foreign key', () {
@@ -697,9 +853,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('updates the matching entity in the database', () {
@@ -827,9 +983,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('creates the entity when the primary key value is non-existant', () {
@@ -946,9 +1102,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('will create the new foreign key', () {
@@ -1063,9 +1219,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('will create the new foreign keys', () {
@@ -1193,9 +1349,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('removes the entity from the database', () {
@@ -1319,9 +1475,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB, EntityC]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB, EntityC]);
     });
 
     test('Normal deletion with a m2o foreign key', () {
@@ -1352,9 +1508,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB, EntityC]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB, EntityC]);
     });
 
     test('Normal deletion with a o2m foreign key', () {
@@ -1385,9 +1541,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('throws if the filter list is invalid', () {
