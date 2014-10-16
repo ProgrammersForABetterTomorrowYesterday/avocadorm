@@ -96,17 +96,21 @@ class Resource {
 
   // Converts a normal property to a [Property] instance.
   static Property _convertColumnToProperty(String name, Type type, Column column) {
+    var columnName = column.name;
+
     if (column.name == null || column.name.isEmpty) {
-      column.name = name;
+      columnName = name;
     }
 
-    return new Property(name, type, column.name);
+    return new Property(name, type, columnName);
   }
 
   // Converts a primary key property to a [PrimaryKeyProperty] instance.
   static Property _convertPrimaryKeyColumnToProperty(String name, Type type, Column column) {
+    var columnName = column.name;
+
     if (column.name == null || column.name.isEmpty) {
-      column.name = name;
+      columnName = name;
     }
 
     var r = reflectType(type);
@@ -114,7 +118,7 @@ class Resource {
       throw new ResourceException('Primary keys should be a value type.');
     }
 
-    return new PrimaryKeyProperty(name, type, column.name);
+    return new PrimaryKeyProperty(name, type, columnName);
   }
 
   // Converts a many-to-one foreign key property to a [ForeignKeyProperty] instance.
@@ -127,11 +131,13 @@ class Resource {
       throw new ResourceException('Many-to-one foreign keys must point to a Column in the same class.');
     }
 
+    var targetName = column.targetName;
+
     if (column.targetName == null || column.targetName.isEmpty) {
-      column.targetName = '${name}Id';
+      targetName = '${name}Id';
     }
 
-    return new ForeignKeyProperty.ManyToOne(name, type, column.targetName, column.onUpdate, column.onDelete);
+    return new ForeignKeyProperty.ManyToOne(name, type, targetName, column.onUpdate, column.onDelete);
   }
 
   // Converts a one-to-many foreign key property to a [ForeignKeyProperty] instance.
@@ -155,11 +161,13 @@ class Resource {
       throw new ResourceException('One-to-many foreign keys must point to a Column in the target class.');
     }
 
+    var targetName = column.targetName;
+
     if (column.targetName == null || column.targetName.isEmpty) {
-      column.targetName = '${MirrorSystem.getName(reflectType(subType).simpleName)}Id';
+      targetName = '${MirrorSystem.getName(reflectType(subType).simpleName)}Id';
     }
 
-    return new ForeignKeyProperty.OneToMany(name, subType, column.targetName, column.onUpdate, column.onDelete);
+    return new ForeignKeyProperty.OneToMany(name, subType, targetName, column.onUpdate, column.onDelete);
   }
 
 }
