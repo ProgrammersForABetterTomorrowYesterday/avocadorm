@@ -52,14 +52,29 @@ class Avocadorm {
   /// The list of [Entity] classes that were added to this ORM.
   List<Resource> _resources;
 
+  static final Avocadorm _instance = new Avocadorm._internal();
+
   /**
-   * Creates an instance of an ORM.
+   * Returns the instance of the singleton Avocadorm.
    *
-   * The Avocadorm is linked to the specified `DatabaseHandler` and has to be given entities before being usable.
+   * The Avocadorm must be set with a `DatabaseHandler` and has to be given entities before being usable.
+   */
+  factory Avocadorm() {
+    return _instance;
+  }
+
+  Avocadorm._internal();
+
+  /**
+   * Sets the `DatabaseHandler` that will be used to connect to a database.
+   *
+   * The specified database handler will be used by the Avocadorm to perform CRUD operations on a database.
    *
    * Throws an [ArgumentError] if the `DatabaseHandler` is null or invalid.
+   *
+   *     avo.setDatabaseHandler(dbHandler);
    */
-  Avocadorm(DatabaseHandler databaseHandler) {
+  void setDatabaseHandler(DatabaseHandler databaseHandler) {
     if (databaseHandler == null) {
       throw new ArgumentError('Database handler must not be null.');
     }
@@ -69,7 +84,6 @@ class Avocadorm {
     }
 
     this._databaseHandler = databaseHandler;
-    this._resources = [];
   }
 
   /**
@@ -163,9 +177,30 @@ class Avocadorm {
 
   // Converts the [Entity] class to a [Resource], and adds it to the list.
   bool _addEntityResource(Type entityType) {
+    if (this._resources == null) {
+      this._resources = [];
+    }
+
+    if (this._resources.any((r) => r.type == entityType)) {
+      return false;
+    }
+
     this._resources.add(new Resource(entityType));
 
     return true;
+  }
+
+  // Returns a value indicating whether the Avocadorm has a `DatabaseHandler` and at least an `Entity`.
+  bool get isActive => this._databaseHandler != null && this._resources != null && this._resources.length > 0;
+
+  /**
+   * Clears the Avocadorm from its database handler and its entities.
+   *
+   * This sets the database handler
+   */
+  void clear() {
+    this._databaseHandler = null;
+    this._resources = null;
   }
 
 
@@ -177,13 +212,15 @@ class Avocadorm {
    * key value of the new table row.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
-   * Throws an [AvocadormException] if the primary key value already exists in the database.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the primary key value already exists in the
+   * database.
    *
    *     var entity = new Employee('Doe', 'John');
    *     avo.create(entity).then( ... );
    */
   Future<Object> create(Entity entity) {
     _validateEntity(entity);
+    _validateAvocadorm();
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -210,13 +247,15 @@ class Avocadorm {
    * Usage of [create] is prefered in normal scenarios. See the [create] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
-   * Throws an [AvocadormException] if the primary key value already exists in the database.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the primary key value already exists in the
+   * database.
    *
    *     avo.createFromMap(httpRequest).then( ... );
    */
   Future<Object> createFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
     _validateDataMap(data);
+    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -242,12 +281,14 @@ class Avocadorm {
    *
    * Throws an [ArgumentError] if the `Entity` class is null or invalid, or if the list of `Filter` contains
    * invalid items.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active.
    *
    *     avo.count(Employee, filters: [new Filter('firstName', 'John')]).then( ... );
    */
   Future<int> count(Type entityType, {List<Filter> filters}) {
     _validateEntityType(entityType);
     _validateFilterList(filters);
+    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         dbFilters = this._convertFiltersToDatabaseFilters(filters, resource);
@@ -262,12 +303,14 @@ class Avocadorm {
    * in the database with the given primary key value.
    *
    * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active.
    *
    *     avo.hasId(Employee, value).then( ... );
    */
   Future<bool> hasId(Type entityType, Object primaryKeyValue) {
     _validateEntityType(entityType);
     _validatePrimaryKeyValue(primaryKeyValue);
+    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
     pkColumn = resource.primaryKeyProperty.columnName,
@@ -284,8 +327,9 @@ class Avocadorm {
    * can also be retrieved by name at the same time, by specifying them in the list [foreignKeys]. Returns a `Future`
    * containing a list of `Entity` instances.
    *
-   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
-   * Throws an [ArgumentError] if the list of `Filter` contains invalid items.
+   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid, or the list of `Filter`
+   * contains invalid items.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active.
    *
    *     // Retrieves all employees where firstName == 'John'.
    *     avo.read(Employee, filters: [new Filter('firstName', 'John')]).then( ... );
@@ -299,6 +343,7 @@ class Avocadorm {
   Future<List<Entity>> read(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
     _validateEntityType(entityType);
     _validateFilterList(filters);
+    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         dbFilters = this._convertFiltersToDatabaseFilters(filters, resource);
@@ -314,12 +359,14 @@ class Avocadorm {
    * containing an `Entity` instance, or `null` if no matching `Entity` could be found.
    *
    * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active.
    *
    *     avo.readById(Employee, value, foreignKeys: ['answersTo']).then( ... );
    */
   Future<Entity> readById(Type entityType, Object primaryKeyValue, {List<String> foreignKeys}) {
     _validateEntityType(entityType);
     _validatePrimaryKeyValue(primaryKeyValue);
+    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pkColumn = resource.primaryKeyProperty.columnName,
@@ -336,7 +383,8 @@ class Avocadorm {
    * key value must be found. Returns a `Future` containing the primary key value of the `Entity`.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
-   * Throws an [AvocadormException] if the table does not contain a matching primary key value.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the table does not contain a matching primary
+   * key value.
    *
    *     avo.readById(Employee, 2).then((employee) {
    *       employee.isFired = true;
@@ -345,6 +393,7 @@ class Avocadorm {
    */
   Future<Object> update(Entity entity) {
     _validateEntity(entity);
+    _validateAvocadorm();
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -368,13 +417,15 @@ class Avocadorm {
    * Usage of [update] is prefered in normal scenarios. See the [update] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
-   * Throws an [AvocadormException] if the table does not contain a matching primary key value.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the table does not contain a matching primary
+   * key value.
    *
    *     avo.updateFromMap(Company, httpRequest).then( ... );
    */
   Future<Object> updateFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
     _validateDataMap(data);
+    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -398,12 +449,14 @@ class Avocadorm {
    * primary key value of the saved `Entity` instance.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active.
    *
    *     var entity = new Employee('Doe', 'Jane);
    *     avo.save(entity).then( ... );
    */
   Future<Object> save(Entity entity) {
     _validateEntity(entity);
+    _validateAvocadorm();
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -428,12 +481,14 @@ class Avocadorm {
    * Usage of [save] is prefered in normal scenarios. See the [save] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active.
    *
    *     avo.saveFromMap(Employee, httpRequest).then( ... );
    */
   Future<Object> saveFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
     _validateDataMap(data);
+    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -456,12 +511,14 @@ class Avocadorm {
    * must be found. Returns an empty `Future`.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
-   * Throws an [AvocadormException] if the primary key value is not found in the database.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the primary key value is not found in the
+   * database.
    *
    *     avo.delete(myEmployee).then( ... );
    */
   Future delete(Entity entity) {
-  _validateEntity(entity);
+    _validateEntity(entity);
+    _validateAvocadorm();
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -485,13 +542,15 @@ class Avocadorm {
    * value must be found. Returns an empty `Future`.
    *
    * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
-   * Throws an [AvocadormException] if the primary key value is not found in the database.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the primary key value is not found in the
+   * database.
    *
    *     avo.deleteById(Employee, 23).then( ... );
    */
   Future deleteById(Type entityType, Object primaryKeyValue) {
     _validateEntityType(entityType);
     _validatePrimaryKeyValue(primaryKeyValue);
+    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pkColumn = resource.primaryKeyProperty.columnName,
@@ -513,13 +572,15 @@ class Avocadorm {
    * Usage of [delete] is prefered in normal scenarios. See the [delete] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
-   * Throws an [AvocadormException] if the primary key value is not found in the database.
+   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the primary key value is not found in the
+   * database.
    *
    *     avo.deleteFromMap(httpRequest).then( ... );
    */
   Future deleteFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
     _validateDataMap(data);
+    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -841,6 +902,13 @@ class Avocadorm {
     }).where((f) => f != null).toList();
   }
 
+
+  // Validates if the Avocadorm is active.
+  void _validateAvocadorm() {
+    if (!this.isActive) {
+      throw new AvocadormException('The Avocadorm must have a database handler and at least one entity.');
+    }
+  }
 
   // Validates an [Entity] argument.
   static void _validateEntity(Entity entity) {
