@@ -2,9 +2,9 @@
 library resource;
 
 import 'dart:mirrors';
+import 'package:magnetfruit_avocadorm/avocadorm.dart' show ResourceException;
 import 'package:magnetfruit_entity/entity.dart';
 import '../property/property.dart';
-import '../../exceptions/resource_exception.dart';
 
 /// A representation of an [Entity] class and its database table informations.
 ///
