@@ -30,9 +30,11 @@ import 'dart:convert';
 import 'dart:mirrors';
 import 'package:magnetfruit_database_handler/database_handler.dart';
 import 'package:magnetfruit_entity/entity.dart';
-import 'exceptions/avocadorm_exception.dart';
 import 'src/property/property.dart';
 import 'src/resource/resource.dart';
+
+part 'exceptions/avocadorm_exception.dart';
+part 'exceptions/resource_exception.dart';
 
 /// A link to a database, and a provider of CRUD operations for entities.
 ///
