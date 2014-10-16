@@ -2,7 +2,7 @@
 library resource;
 
 import 'dart:mirrors';
-import 'package:magnetfruit_avocadorm/avocadorm.dart';
+import 'package:magnetfruit_avocadorm/avocadorm.dart' show ResourceException;
 import 'package:magnetfruit_entity/entity.dart';
 import '../property/property.dart';
 
