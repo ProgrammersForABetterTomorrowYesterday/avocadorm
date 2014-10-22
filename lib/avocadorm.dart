@@ -710,14 +710,40 @@ class Avocadorm {
             .then((entity) => entity.length > 0 ? entity.first : null);
         }
         else if (p.isOneToMany) {
-          var targetResource = this._getResource(p.type);
-          var targetColumn = targetResource.simpleProperties.firstWhere((tp) => tp.name == p.targetName).columnName;
-          var targetValue = entityMirror.getField(new Symbol(resource.primaryKeyProperty.name)).reflectee;
+          var targetResource = this._getResource(p.type),
+              targetColumn = targetResource.simpleProperties.firstWhere((tp) => tp.name == p.targetName).columnName,
+              targetValue = entityMirror.getField(new Symbol(resource.primaryKeyProperty.name)).reflectee;
 
           future = this._read(
-              this._getResource(p.type),
+              targetResource,
               filters: [new Filter(targetColumn, targetValue)],
               foreignKeys: _traverseForeignKeyList(foreignKeys, p.name));
+        }
+        else if (p.isManyToMany) {
+          var targetPkValue = entityMirror.getField(new Symbol(resource.primaryKeyProperty.name)).reflectee,
+              filters = [new Filter(p.targetColumnName, targetPkValue) ];
+
+          // Calling the database handler directly because the junction table is not a resource.
+          future = this._databaseHandler.read(p.junctionTableName, [p.otherColumnName], filters).then((entities) {
+
+            var subFutures = [],
+                targetResource = this._getResource(p.type),
+                targetColumn = targetResource.primaryKeyProperty.columnName;
+
+            entities.forEach((e) {
+              var targetValue = e[p.otherColumnName];
+
+              var subFuture = this._read(
+                targetResource,
+                filters: [new Filter(targetColumn, targetValue)],
+                foreignKeys: _traverseForeignKeyList(foreignKeys, p.name))
+                .then((e2) => e2.first);
+
+              subFutures.add(subFuture);
+            });
+
+            return Future.wait(subFutures);
+          });
         }
 
         if (future != null) {
@@ -765,6 +791,43 @@ class Avocadorm {
               } else {
                 return this._update(fkResource, e);
               }
+            });
+
+            futures.add(future);
+          });
+        }
+        else if (fk.isManyToMany) {
+          fkData.forEach((e) {
+            // Adds a row in the junction table associated with the current fk pk, and its parent pk.
+
+            var fkPkValue;
+
+            var future = this._count(fkResource, filters: [new Filter(fkPk.columnName, e[fkPk.name])]).then((count) {
+              if (count == 0) {
+                return this._create(fkResource, e);
+              } else {
+                return this._update(fkResource, e);
+              }
+            }).then((pkValue) {
+              fkPkValue = pkValue;
+
+              var filters = [
+                  new Filter(fk.targetColumnName, data[resource.primaryKeyProperty.name]),
+                  new Filter(fk.otherColumnName, fkPkValue)
+              ];
+
+              return this._databaseHandler.count(fk.junctionTableName, filters);
+            }).then((count) {
+              if (count == 0) {
+                // Adds the row in the junction table.
+                var map = {};
+                map[fk.targetColumnName] = data[resource.primaryKeyProperty.name];
+                map[fk.otherColumnName] = fkPkValue;
+
+                return this._databaseHandler.create(fk.junctionTableName, fk.targetColumnName, [fk.otherColumnName], map);
+              }
+
+              return new Future.value(null);
             });
 
             futures.add(future);
@@ -818,6 +881,43 @@ class Avocadorm {
 
           futures.add(future);
         }
+        else if (fk.isManyToMany) {
+          var future = new Future.value(fkData)
+            .then((entities) {
+              if (entities != null) {
+                return entities;
+              }
+              else {
+                var targetPkValue = data[resource.primaryKeyProperty.name],
+                    filters = [new Filter(fk.targetColumnName, targetPkValue) ];
+
+                // Calling the database handler directly because the junction table is not a resource.
+                return this._databaseHandler.read(fk.junctionTableName, [fk.otherColumnName], filters).then((entities) {
+
+                  var subFutures = [],
+                      otherPk = fkResource.primaryKeyProperty.columnName;
+
+                  entities.forEach((e) {
+                    var targetValue = e[fk.otherColumnName];
+
+                    var subFuture = this._read(fkResource, filters: [new Filter(otherPk, targetValue)])
+                      .then((e2) => e2 != null && e2.length > 0 ? e2.first : null);
+
+                    subFutures.add(subFuture);
+                  });
+
+                  return Future.wait(subFutures).then((entities) => entities.where((e) => e != null));
+                });
+              }
+            })
+            .then((entities) {
+              entities.forEach((entity) {
+                this._delete(fkResource, this._convertFromEntity(entity));
+              });
+            });
+
+          futures.add(future);
+        }
       });
 
     return Future.wait(futures);
@@ -859,7 +959,7 @@ class Avocadorm {
       if (fkValue != null) {
         if (fk.isManyToOne) {
           map[fk.name] = this._convertFromEntity(fkValue);
-        } else if (fk.isOneToMany) {
+        } else if (fk.isOneToMany || fk.isManyToMany) {
           map[fk.name] = fkValue.map((v) => this._convertFromEntity(v));
         }
       }

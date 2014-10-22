@@ -12,4 +12,6 @@ class EntityB extends Entity {
   @Column.OneToManyForeignKey('entityBId', onUpdate: ReferentialAction.CASCADE)
   List<EntityA> entityAs;
 
+  @Column.ManyToManyForeignKey('entity_b_entity_c', 'entity_b_id', 'entity_c_id', onUpdate: ReferentialAction.CASCADE, onDelete: ReferentialAction.CASCADE)
+  List<EntityC> entityCs;
 }

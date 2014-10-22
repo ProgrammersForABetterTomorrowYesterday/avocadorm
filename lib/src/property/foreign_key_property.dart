@@ -5,7 +5,7 @@ part of property;
 /// This is an internal implementation, and as such, no garantee can be given concerning breaking changes.
 /// Constructors, properties, and methods should not be available to the user.
 ///
-/// There are currently two types of foreign key [relationships](http://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model)
+/// There are currently three types of foreign key [relationships](http://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model)
 /// available to the Avocadorm:
 ///
 /// *  **Many-to-one foreign keys**
@@ -15,6 +15,11 @@ part of property;
 /// *  **One-to-many foreign keys**
 ///
 ///    For example, a company "possessing" an arbitrary amount of employees, written `company.Employees`.
+///
+/// *  **Many-to-many foreign keys**
+///
+///    For example, an employee "possessing" an arbitrary amount of projects, written `employee.Projects`, and a
+///    project that can "belong" to multiple employees, written `project.Employees`.
 class ForeignKeyProperty extends Property {
 
   /// Whether this is a many-to-one foreign key property.
@@ -22,6 +27,9 @@ class ForeignKeyProperty extends Property {
 
   /// Whether this is a one-to-many foreign key property.
   final bool isOneToMany;
+
+  /// Whether this is a many-to-many foreign key property.
+  final bool isManyToMany;
 
   /// The property that this foreign key targets.
   ///
@@ -44,6 +52,20 @@ class ForeignKeyProperty extends Property {
   ///        company.companyId == 3
   ///        company.employees ==> List of all Employee instances whose companyId values are equal to 3
   final String targetName;
+
+  /// The name of the database junction table.
+  ///
+  /// Used by many-to-many foreign key properties to find the other entity that is joined to the current one.
+  ///
+  ///     student.studentId == 4
+  ///     student.teachers ==> all teachers whose id match the student id in the given junction table.
+  final String junctionTableName;
+
+  /// The column name of the current entity in the junction table.
+  final String targetColumnName;
+
+  /// The column name of the other entity in the junction table.
+  final String otherColumnName;
 
   /// What to do to this foreign key when saving the `Entity`.
   ///
@@ -74,5 +96,13 @@ class ForeignKeyProperty extends Property {
    */
   ForeignKeyProperty.OneToMany(String name, Type type, this.targetName, this.onUpdateOperation, this.onDeleteOperation)
     : super(name, type, null), isOneToMany = true;
+
+  /**
+   * Creates an instance of a many-to-many foreign key.
+   *
+   * Creates a many-to-many foreign key [Property] that links two `Entity`s by a junction database table.
+   */
+  ForeignKeyProperty.ManyToMany(String name, Type type, this.junctionTableName, this.targetColumnName, this.otherColumnName, this.onUpdateOperation, this.onDeleteOperation)
+  : super(name, type, null), isManyToMany = true;
 
 }

@@ -361,6 +361,24 @@ void main() {
 
     });
 
+    test('throws if a m2m foreign key is not a list', () {
+
+      expect(
+          () => avocadorm.addEntity(FkInvalidM2MListEntity),
+          throwsA(new isInstanceOf<ResourceException>()),
+          reason: 'A m2m foreign key should be a list.');
+
+    });
+
+    test('throws if a m2m foreign key is not a list of an entity type', () {
+
+      expect(
+          () => avocadorm.addEntity(FkInvalidM2MTypeEntity),
+          throwsA(new isInstanceOf<ResourceException>()),
+          reason: 'A m2m foreign key should be a list of entity type.');
+
+    });
+
   });
 
   group('Creating an entity', () {
@@ -804,10 +822,10 @@ void main() {
       setEntities();
       avocadorm = new Avocadorm()
         ..setDatabaseHandler(new MockDatabaseHandler())
-        ..addEntities([EntityA, EntityB]);
+        ..addEntities([EntityA, EntityB, EntityC]);
     });
 
-    test('returns an entity with the specified foreign key', () {
+    test('returns an entity with the specified many-to-one foreign key', () {
 
       avocadorm.readById(EntityA, 4, foreignKeys: ['entityB']).then(expectAsync((entityA) {
 
@@ -820,6 +838,62 @@ void main() {
             entityA.entityB.name,
             equals('Third EntityB'),
             reason: 'The entityA property \'entityB\' should have the correct name \'Third EntityB\'.');
+
+      }));
+
+    });
+
+    test('returns an entity with the specified one-to-many foreign key', () {
+
+      avocadorm.readById(EntityB, 2, foreignKeys: ['entityAs']).then(expectAsync((entityB) {
+
+        expect(
+            entityB.entityAs,
+            isNotNull,
+            reason: 'The entityB property \'entityAs\' should have been retrieved.');
+
+        expect(
+            entityB.entityAs.length,
+            equals(2),
+            reason: 'The entityB property \'entityAs\' should contain two EntityA objects.');
+
+        expect(
+            entityB.entityAs.elementAt(0).entityAId,
+            equals(2),
+            reason: 'The entityB property \'entityAs\' should contain an EntityA with id \'2\'.');
+
+        expect(
+            entityB.entityAs.elementAt(1).entityAId,
+            equals(5),
+            reason: 'The entityB property \'entityAs\' should contain an EntityA with id \'5\'.');
+
+      }));
+
+    });
+
+    test('returns an entity with the specified many-to-many foreign key', () {
+
+      avocadorm.readById(EntityB, 1, foreignKeys: ['entityCs']).then(expectAsync((entityB) {
+
+        expect(
+            entityB.entityCs,
+            isNotNull,
+            reason: 'The entityB property \'entityCs\' should have been retrieved.');
+
+        expect(
+            entityB.entityCs.length,
+            equals(2),
+            reason: 'The entityB property \'entityCs\' should contain two EntityC objects.');
+
+        expect(
+            entityB.entityCs.elementAt(0).entityCId,
+            equals('1'),
+            reason: 'The entityB property \'entityCs\' should contain an EntityC with id \'1\'.');
+
+        expect(
+            entityB.entityCs.elementAt(1).entityCId,
+            equals('2'),
+            reason: 'The entityB property \'entityCs\' should contain an EntityC with id \'2\'.');
 
       }));
 
@@ -1341,6 +1415,134 @@ void main() {
 
   });
 
+  group('Saving entities with many-to-many foreign keys', () {
+
+    var avocadorm;
+
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB, EntityC]);
+    });
+
+    test('will create the new foreign keys', () {
+
+      var entityFk1 = new EntityC()
+            ..entityCId = '10'
+            ..name = 'New EntityC1',
+          entityFk2 = new EntityC()
+            ..entityCId = '11'
+            ..name = 'New EntityC2',
+          entity = new EntityB()
+            ..entityBId = 2
+            ..name = 'New EntityB'
+            ..entityCs = [entityFk1, entityFk2];
+
+      avocadorm.hasId(EntityC, entityFk1.entityCId).then(expectAsync((isFound) {
+
+        expect(isFound, isFalse, reason: 'EntityC with primary key value \'10\' should not exist.');
+
+        avocadorm.save(entity).then(expectAsync((id) {
+
+          avocadorm.hasId(EntityC, entityFk1.entityCId).then(expectAsync((isFound) {
+
+            expect(isFound, isTrue, reason: 'EntityC with primary key value 10 should have been created.');
+
+          }));
+
+          avocadorm.hasId(EntityC, entityFk2.entityCId).then(expectAsync((isFound) {
+
+            expect(isFound, isTrue, reason: 'EntityC with primary key value 11 should have been created.');
+
+          }));
+
+        }));
+
+      }));
+
+    });
+
+    test('will update the existing foreign keys', () {
+
+      var entityFk1 = new EntityC()
+            ..entityCId = '1'
+            ..name = 'New EntityC1',
+          entityFk2 = new EntityC()
+            ..entityCId = '2'
+            ..name = 'New EntityC2',
+          entity = new EntityB()
+            ..entityBId = 2
+            ..name = 'New EntityB'
+            ..entityCs = [entityFk1, entityFk2];
+
+      avocadorm.hasId(EntityC, entityFk1.entityCId).then(expectAsync((isFound) {
+
+        expect(isFound, isTrue, reason: 'EntityC with primary key value \'1\' should exist.');
+
+        avocadorm.save(entity).then(expectAsync((id) {
+
+          avocadorm.readById(EntityC, entityFk1.entityCId).then(expectAsync((entityC) {
+
+            expect(entityC, isNotNull, reason: 'First EntityC should not have disappeared after the save.');
+
+            expect(entityC.name, equals(entityFk1.name), reason: 'First EntityC should have been updated with the specified name.');
+
+          }));
+
+          avocadorm.readById(EntityC, entityFk2.entityCId).then(expectAsync((entityC) {
+
+            expect(entityC, isNotNull, reason: 'Second EntityC should not have disappeared after the save.');
+
+            expect(entityC.name, equals(entityFk2.name), reason: 'Second EntityC should have been updated with the specified name.');
+
+          }));
+
+        }));
+
+      }));
+
+    });
+
+    test('will retrieve entities through the junction table', () {
+
+      var entityFk1 = new EntityC()
+            ..entityCId = '10'
+            ..name = 'New EntityC1',
+          entityFk2 = new EntityC()
+            ..entityCId = '11'
+            ..name = 'New EntityC2',
+          entity = new EntityB()
+            ..entityBId = 12
+            ..name = 'New EntityB'
+            ..entityCs = [entityFk1, entityFk2];
+
+      avocadorm.save(entity).then(expectAsync((id) {
+
+        avocadorm.readById(EntityB, id, foreignKeys: ['entityCs']).then(expectAsync((entityB) {
+
+          expect(entityB.entityCs.length, equals(2), reason: 'Saved entityB should have two many-to-many EntityC foreign keys.');
+
+          avocadorm.readById(EntityC, entityB.entityCs.elementAt(0).entityCId, foreignKeys: ['entityBs']).then(expectAsync((entityC) {
+
+            expect(entityC.entityBs.length, equals(1), reason: 'First saved entityC should have one many-to-many EntityB foreign keys.');
+
+          }));
+
+          avocadorm.readById(EntityC, entityB.entityCs.elementAt(1).entityCId, foreignKeys: ['entityBs']).then(expectAsync((entityC) {
+
+            expect(entityC.entityBs.length, equals(1), reason: 'Second saved entityC should have one many-to-many EntityB foreign keys.');
+
+          }));
+
+        }));
+
+      }));
+
+    });
+
+  });
+
   group('Deleting entities', () {
 
     var avocadorm;
@@ -1349,7 +1551,7 @@ void main() {
       setEntities();
       avocadorm = new Avocadorm()
         ..setDatabaseHandler(new MockDatabaseHandler())
-        ..addEntities([EntityA, EntityB]);
+        ..addEntities([EntityA, EntityB, EntityC]);
     });
 
     test('removes the entity from the database', () {
@@ -1454,9 +1656,7 @@ void main() {
 
     test('throws if the entity was not added', () {
 
-      var entity = new EntityC()
-            ..entityCId = '2'
-            ..name = 'Entity C';
+      var entity = new NormalEntity();
 
       expect(
           () => avocadorm.delete(entity),
@@ -1524,6 +1724,40 @@ void main() {
               entityCs.length,
               equals(0),
               reason: 'One-to-many foreign keys should have been deleted.');
+
+        }));
+
+      }));
+
+    });
+
+  });
+
+  group('Deleting entities with many-to-many foreign keys', () {
+
+    var avocadorm;
+
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB, EntityC]);
+    });
+
+    test('Normal deletion with a m2m foreign key', () {
+
+      // onDelete Cascade is set on EntityB's entityCs foreign key,
+      //   so the EntityC objects that are joined to the deleted EntityB
+      //   through the junction table should be deleted also.
+
+      avocadorm.deleteById(EntityB, 2).then(expectAsync((r) {
+
+        avocadorm.hasId(EntityC, '1').then(expectAsync((isFound) {
+
+          expect(
+              isFound,
+              isFalse,
+              reason: 'Many-to-many foreign keys should have been deleted.');
 
         }));
 
