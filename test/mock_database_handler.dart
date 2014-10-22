@@ -102,8 +102,15 @@ void setEntities() {
   ];
 
   _entityRepository['entity_c'] = [
-      { 'entity_c_id': 1, 'name': 'First EntityC', 'entity_a_id': 3 },
-      { 'entity_c_id': 2, 'name': 'Second EntityC', 'entity_a_id': 4  },
-      { 'entity_c_id': 3, 'name': 'Third EntityC', 'entity_a_id': 4  }
+      { 'entity_c_id': '1', 'name': 'First EntityC', 'entity_a_id': 3 },
+      { 'entity_c_id': '2', 'name': 'Second EntityC', 'entity_a_id': 4  },
+      { 'entity_c_id': '3', 'name': 'Third EntityC', 'entity_a_id': 4  }
+  ];
+
+  _entityRepository['entity_b_entity_c'] = [
+      { 'entity_b_id': 1, 'entity_c_id': '1' },
+      { 'entity_b_id': 1, 'entity_c_id': '2' },
+      { 'entity_b_id': 2, 'entity_c_id': '1' },
+      { 'entity_b_id': 3, 'entity_c_id': '3' }
   ];
 }

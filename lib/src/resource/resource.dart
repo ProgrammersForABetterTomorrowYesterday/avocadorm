@@ -86,8 +86,11 @@ class Resource {
         return _convertManyToOneForeignKeyColumnToProperty(name, type, column, variableMirrors);
       }
       else if (column.isOneToManyForeignKey) {
-          return _convertOneToManyForeignKeyColumnToProperty(name, type, column, variableMirrors);
-        }
+        return _convertOneToManyForeignKeyColumnToProperty(name, type, column, variableMirrors);
+      }
+      else if (column.isManyToManyForeignKey) {
+        return _convertManyToManyForeignKeyColumnToProperty(name, type, column, variableMirrors);
+      }
       else {
         return _convertColumnToProperty(name, type, column);
       }
@@ -168,6 +171,22 @@ class Resource {
     }
 
     return new ForeignKeyProperty.OneToMany(name, subType, targetName, column.onUpdate, column.onDelete);
+  }
+
+  // Converts a many-to-many foreign key property to a [ForeignKeyProperty] instance.
+  static Property _convertManyToManyForeignKeyColumnToProperty(String name, Type type, Column column, List<VariableMirror> variableMirrors) {
+    if (!reflectType(type).isSubtypeOf(reflectType(List))) {
+      throw new ResourceException('Many-to-many foreign keys must be of type List.');
+    }
+
+    // For simplicity, ManyToMany's type should not be List<Entity>, but Entity.
+    var subType = reflectType(type).typeArguments[0].reflectedType;
+
+    if (subType is! Type || !reflectType(subType).isSubtypeOf(reflectType(Entity))) {
+      throw new ResourceException('Many-to-many foreign keys must be a list of type Entity.');
+    }
+
+    return new ForeignKeyProperty.ManyToMany(name, subType, column.junctionTableName, column.targetColumnName, column.otherColumnName, column.onUpdate, column.onDelete);
   }
 
 }
