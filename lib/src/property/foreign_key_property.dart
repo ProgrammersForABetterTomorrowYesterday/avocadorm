@@ -87,7 +87,7 @@ class ForeignKeyProperty extends Property {
    * Creates a many-to-one foreign key [Property] that links an `Entity` property to a database table.
    */
   ForeignKeyProperty.ManyToOne(String name, Type type, this.targetName, this.onUpdateOperation, this.onDeleteOperation)
-    : super(name, type, null), isManyToOne = true;
+    : super(name, type, null), isManyToOne = true, isOneToMany = false, isManyToMany = false;
 
   /**
    * Creates an instance of a one-to-many foreign key.
@@ -95,7 +95,7 @@ class ForeignKeyProperty extends Property {
    * Creates a one-to-many foreign key [Property] that links an `Entity` property to a database table.
    */
   ForeignKeyProperty.OneToMany(String name, Type type, this.targetName, this.onUpdateOperation, this.onDeleteOperation)
-    : super(name, type, null), isOneToMany = true;
+    : super(name, type, null), isManyToOne = false, isOneToMany = true, isManyToMany = false;
 
   /**
    * Creates an instance of a many-to-many foreign key.
@@ -103,6 +103,6 @@ class ForeignKeyProperty extends Property {
    * Creates a many-to-many foreign key [Property] that links two `Entity`s by a junction database table.
    */
   ForeignKeyProperty.ManyToMany(String name, Type type, this.junctionTableName, this.targetColumnName, this.otherColumnName, this.onUpdateOperation, this.onDeleteOperation)
-  : super(name, type, null), isManyToMany = true;
+  : super(name, type, null), isManyToOne = false, isOneToMany = false, isManyToMany = true;
 
 }

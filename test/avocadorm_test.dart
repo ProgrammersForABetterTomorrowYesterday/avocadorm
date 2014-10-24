@@ -48,21 +48,12 @@ void main() {
 
     });
 
-    test('throws if the database handler is null', () {
+    test('throws if the database handler is invalid', () {
 
       expect(
           () => avocadorm.setDatabaseHandler(null),
           throwsArgumentError,
           reason: 'A null database handler should throw an exception.');
-
-    });
-
-    test('throws if the database handler is invalid', () {
-
-      expect(
-          () => avocadorm.setDatabaseHandler('Invalid Type'),
-          throwsArgumentError,
-          reason: 'A database handler of an invalid type should throw an exception.');
 
     });
 
@@ -105,17 +96,12 @@ void main() {
 
     });
 
-    test('throws if the library is null', () {
+    test('throws if the library is invalid', () {
 
       expect(
           () => avocadorm.addEntitiesInLibrary(null),
           throwsArgumentError,
           reason: 'A null library name should throw an exception.');
-
-      expect(
-          () => avocadorm.addEntitiesInLibrary({'type': 'Invalid type'}),
-          throwsArgumentError,
-          reason: 'A library name of an invalid type should throw an exception.');
 
       expect(
           () => avocadorm.addEntitiesInLibrary('Invalid library name'),
@@ -131,16 +117,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null list of entity type should throw an exception.');
 
-      expect(
-          () => avocadorm.addEntities('Invalid type'),
-          throwsArgumentError,
-          reason: 'A list of entity type that is not a list should throw an exception.');
-
-      expect(
-          () => avocadorm.addEntities(['Invalid type']),
-          throwsArgumentError,
-          reason: 'An list of entity type in which an item is of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -149,11 +125,6 @@ void main() {
           () => avocadorm.addEntity(null),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
-
-      expect(
-          () => avocadorm.addEntity('Invalid type'),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
 
     });
 
@@ -491,11 +462,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity should throw an exception.');
 
-      expect(
-          () => avocadorm.create('Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -505,11 +471,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
 
-      expect(
-          () => avocadorm.createFromMap('Invalid Type', {}),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity map is invalid', () {
@@ -518,11 +479,6 @@ void main() {
           () => avocadorm.createFromMap(EntityA, null),
           throwsArgumentError,
           reason: 'A null entity map should throw an exception.');
-
-      expect(
-          () => avocadorm.createFromMap(EntityA, 'Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity map of an invalid type should throw an exception.');
 
     });
 
@@ -633,11 +589,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity should throw an exception.');
 
-      expect(
-          () => avocadorm.count('Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -646,11 +597,6 @@ void main() {
           () => avocadorm.hasId(null, 0),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
-
-      expect(
-          () => avocadorm.hasId('Invalid Type', 0),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
 
     });
 
@@ -747,19 +693,9 @@ void main() {
           reason: 'A null entity type should throw an exception.');
 
       expect(
-          () => avocadorm.read('Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
-
-      expect(
           () => avocadorm.readById(null, 1),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
-
-      expect(
-          () => avocadorm.readById('Invalid Type', 1),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
 
     });
 
@@ -999,11 +935,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity should throw an exception.');
 
-      expect(
-          () => avocadorm.update('Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -1013,11 +944,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
 
-      expect(
-          () => avocadorm.updateFromMap('Invalid Type', {}),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity map is invalid', () {
@@ -1026,11 +952,6 @@ void main() {
           () => avocadorm.updateFromMap(EntityA, null),
           throwsArgumentError,
           reason: 'A null entity map should throw an exception.');
-
-      expect(
-          () => avocadorm.updateFromMap(EntityA, 'Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity map of an invalid type should throw an exception.');
 
     });
 
@@ -1131,8 +1052,6 @@ void main() {
 
       expect(() => avocadorm.save(null), throwsArgumentError, reason: 'A null entity should throw an exception.');
 
-      expect(() => avocadorm.save('Invalid Type'), throwsArgumentError, reason: 'An entity of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -1140,16 +1059,11 @@ void main() {
       expect(() => avocadorm.saveFromMap(null, {
       }), throwsArgumentError, reason: 'A null entity type should throw an exception.');
 
-      expect(() => avocadorm.saveFromMap('Invalid Type', {
-      }), throwsArgumentError, reason: 'An entity type of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity map is invalid', () {
 
       expect(() => avocadorm.saveFromMap(EntityA, null), throwsArgumentError, reason: 'A null entity map should throw an exception.');
-
-      expect(() => avocadorm.saveFromMap(EntityA, 'Invalid Type'), throwsArgumentError, reason: 'An entity map of an invalid type should throw an exception.');
 
     });
 
@@ -1595,11 +1509,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity should throw an exception.');
 
-      expect(
-          () => avocadorm.delete('Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -1610,19 +1519,9 @@ void main() {
           reason: 'A null entity type should throw an exception.');
 
       expect(
-          () => avocadorm.deleteFromMap('Invalid Type', {}),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
-
-      expect(
           () => avocadorm.deleteById(null, {}),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
-
-      expect(
-          () => avocadorm.deleteById('Invalid Type', {}),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
 
     });
 
@@ -1632,11 +1531,6 @@ void main() {
           () => avocadorm.deleteFromMap(EntityA, null),
           throwsArgumentError,
           reason: 'A null entity map should throw an exception.');
-
-      expect(
-          () => avocadorm.deleteFromMap(EntityA, 'Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity map of an invalid type should throw an exception.');
 
     });
 
@@ -1781,21 +1675,9 @@ void main() {
     test('throws if the filter list is invalid', () {
 
       expect(
-          () => avocadorm.count(EntityA, filters: 'Invalid type'),
-          throwsArgumentError,
-          reason: 'A filter list of an invalid type should throw an exception.'
-      );
-
-      expect(
           () => avocadorm.count(EntityA, filters: [null]),
           throwsArgumentError,
           reason: 'A null filter should throw an exception.'
-      );
-
-      expect(
-          () => avocadorm.count(EntityA, filters: ['Invalid type']),
-          throwsArgumentError,
-          reason: 'A filter of an invalid type should throw an exception.'
       );
 
     });

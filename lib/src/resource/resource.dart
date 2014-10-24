@@ -33,13 +33,13 @@ class Resource {
   Property get primaryKeyProperty => this.properties.firstWhere((f) => f is PrimaryKeyProperty, orElse: null);
 
   /// The normal properties contained in the [Entity].
-  List<Property> get simpleProperties => this.properties.where((f) => f is! PrimaryKeyProperty && f is! ForeignKeyProperty);
+  List<Property> get simpleProperties => this.properties.where((f) => f is! PrimaryKeyProperty && f is! ForeignKeyProperty).toList();
 
   /// The primary key property and normal properties contained in the [Entity].
-  List<Property> get simpleAndPrimaryKeyProperties => this.properties.where((f) => f is! ForeignKeyProperty);
+  List<Property> get simpleAndPrimaryKeyProperties => this.properties.where((f) => f is! ForeignKeyProperty).toList();
 
   /// The foreign key properties contained in the [Entity].
-  List<Property> get foreignKeyProperties => this.properties.where((f) => f is ForeignKeyProperty);
+  List<Property> get foreignKeyProperties => this.properties.where((f) => f is ForeignKeyProperty).toList();
 
   /**
    * Creates an instance of a [Resource].
@@ -72,7 +72,7 @@ class Resource {
     var variableMirrors = reflectClass(entityType).declarations.values
       .where((dm) => dm is VariableMirror)
       .map((dm) => dm as VariableMirror)
-      .where((vm) => vm.metadata.any((im) => im.reflectee is Column));
+      .where((vm) => vm.metadata.any((im) => im.reflectee is Column)).toList();
 
     return variableMirrors.map((vm) {
       var column = vm.metadata.firstWhere((im) => im.reflectee is Column).reflectee as Column,
