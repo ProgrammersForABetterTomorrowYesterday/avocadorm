@@ -80,7 +80,7 @@ class MockDatabaseHandler extends Mock implements DatabaseHandler {
 
 }
 
-Map<Type, List<Map>> _entityRepository = new Map<Type, List<Map>>();
+Map<String, List<Map>> _entityRepository = new Map<String, List<Map>>();
 
 // Creates some default values in the repository.
 void setEntities() {

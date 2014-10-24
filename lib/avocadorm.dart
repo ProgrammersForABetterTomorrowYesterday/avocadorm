@@ -1099,7 +1099,7 @@ class Avocadorm {
       .where((fk) => fk == propertyName || fk.startsWith('${propertyName}.'))
       .map((fk) => fk.substring(propertyName.length))
       .where((fk) => fk.isNotEmpty)
-      .map((fk) => _trimLeft(fk, '.'));
+      .map((fk) => _trimLeft(fk, '.')).toList();
 
     return _distinct(traversedForeignKeys);
   }
