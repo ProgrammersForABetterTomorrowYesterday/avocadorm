@@ -140,7 +140,7 @@ class Resource {
       targetName = '${name}Id';
     }
 
-    return new ForeignKeyProperty.ManyToOne(name, type, targetName, column.onUpdate, column.onDelete);
+    return new ForeignKeyProperty.ManyToOne(name, type, targetName, column.recursiveSave, column.recursiveDelete);
   }
 
   // Converts a one-to-many foreign key property to a [ForeignKeyProperty] instance.
@@ -170,7 +170,7 @@ class Resource {
       targetName = '${MirrorSystem.getName(reflectType(subType).simpleName)}Id';
     }
 
-    return new ForeignKeyProperty.OneToMany(name, subType, targetName, column.onUpdate, column.onDelete);
+    return new ForeignKeyProperty.OneToMany(name, subType, targetName, column.recursiveSave, column.recursiveDelete);
   }
 
   // Converts a many-to-many foreign key property to a [ForeignKeyProperty] instance.
@@ -186,7 +186,7 @@ class Resource {
       throw new ResourceException('Many-to-many foreign keys must be a list of type Entity.');
     }
 
-    return new ForeignKeyProperty.ManyToMany(name, subType, column.junctionTableName, column.targetColumnName, column.otherColumnName, column.onUpdate, column.onDelete);
+    return new ForeignKeyProperty.ManyToMany(name, subType, column.junctionTableName, column.targetColumnName, column.otherColumnName, column.recursiveSave, column.recursiveDelete);
   }
 
 }

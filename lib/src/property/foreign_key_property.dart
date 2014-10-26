@@ -67,26 +67,18 @@ class ForeignKeyProperty extends Property {
   /// The column name of the other entity in the junction table.
   final String otherColumnName;
 
-  /// What to do to this foreign key when saving the `Entity`.
-  ///
-  /// *  `ReferentialAction.RESTRICT` (default) prevents this foreign key from updating.
-  /// *  `ReferentialAction.CASCADE` updates this foreign key and its own updatable foreign keys.
-  /// *  `ReferentialAction.SETNULL` (not coded yet).
-  final int onUpdateOperation;
+  /// Whether to recursively save this foreign key when the entity is saved.
+  final bool recursiveSave;
 
-  /// What to do to this foreign key when deleting the `Entity`.
-  ///
-  /// *  `ReferentialAction.RESTRICT` (default) prevents this foreign key from being deleted.
-  /// *  `ReferentialAction.CASCADE` deletes this foreign key and its own deletable foreign keys.
-  /// *  `ReferentialAction.SETNULL` (not coded yet).
-  final int onDeleteOperation;
+  /// Whether to recursively delete this foreign key when the entity is deleted.
+  final bool recursiveDelete;
 
   /**
    * Creates an instance of a many-to-one foreign key.
    *
    * Creates a many-to-one foreign key [Property] that links an `Entity` property to a database table.
    */
-  ForeignKeyProperty.ManyToOne(String name, Type type, this.targetName, this.onUpdateOperation, this.onDeleteOperation)
+  ForeignKeyProperty.ManyToOne(String name, Type type, this.targetName, this.recursiveSave, this.recursiveDelete)
     : super(name, type, null), isManyToOne = true, isOneToMany = false, isManyToMany = false;
 
   /**
@@ -94,7 +86,7 @@ class ForeignKeyProperty extends Property {
    *
    * Creates a one-to-many foreign key [Property] that links an `Entity` property to a database table.
    */
-  ForeignKeyProperty.OneToMany(String name, Type type, this.targetName, this.onUpdateOperation, this.onDeleteOperation)
+  ForeignKeyProperty.OneToMany(String name, Type type, this.targetName, this.recursiveSave, this.recursiveDelete)
     : super(name, type, null), isManyToOne = false, isOneToMany = true, isManyToMany = false;
 
   /**
@@ -102,7 +94,7 @@ class ForeignKeyProperty extends Property {
    *
    * Creates a many-to-many foreign key [Property] that links two `Entity`s by a junction database table.
    */
-  ForeignKeyProperty.ManyToMany(String name, Type type, this.junctionTableName, this.targetColumnName, this.otherColumnName, this.onUpdateOperation, this.onDeleteOperation)
+  ForeignKeyProperty.ManyToMany(String name, Type type, this.junctionTableName, this.targetColumnName, this.otherColumnName, this.recursiveSave, this.recursiveDelete)
   : super(name, type, null), isManyToOne = false, isOneToMany = false, isManyToMany = true;
 
 }

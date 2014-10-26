@@ -759,7 +759,7 @@ class Avocadorm {
     var futures = [];
 
     resource.foreignKeyProperties
-      .where((fk) => fk.onUpdateOperation == ReferentialAction.CASCADE)
+      .where((fk) => fk.recursiveSave)
       .where((fk) => data[fk.name] != null)
       .forEach((fk) {
         var fkResource = this._getResource(fk.type),
@@ -843,7 +843,7 @@ class Avocadorm {
     var futures = [];
 
     resource.foreignKeyProperties
-      .where((fk) => fk.onDeleteOperation == ReferentialAction.CASCADE)
+      .where((fk) => fk.recursiveDelete)
       .forEach((fk) {
         var fkResource = this._getResource(fk.type),
             fkPk = fkResource.primaryKeyProperty,

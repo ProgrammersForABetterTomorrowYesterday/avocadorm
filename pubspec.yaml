@@ -4,7 +4,7 @@ description: 'ORM to perform CRUD operations on entities.'
 author: Zyrthofar <zyrthofar@magnetfruit.com>
 homepage: 'http://www.magnetfruit.com/avocadorm/'
 dependencies:
-  magnetfruit_entity: ">=0.1.0 <0.2.0"
+  magnetfruit_entity: ">=0.1.4 <0.2.0"
   magnetfruit_database_handler: ">=0.1.0 <0.2.0"
 dev_dependencies:
   magnetfruit_mysql_database_handler: ">=0.1.0 <0.2.0"
