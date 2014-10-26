@@ -1574,9 +1574,6 @@ void main() {
 
     test('Normal deletion with a m2o foreign key', () {
 
-      // onDelete Cascade is set on EntityA's entityB foreign key,
-      //  so the entityB with id 3 should be deleted also.
-
       avocadorm.deleteById(EntityA, 4).then(expectAsync((r) {
 
         avocadorm.hasId(EntityB, 3).then(expectAsync((isFound) {
@@ -1607,9 +1604,6 @@ void main() {
 
     test('Normal deletion with a o2m foreign key', () {
 
-      // onDelete Cascade is set on EntityA's entityCs foreign key,
-      //   so all the entityC with entityAId 4 should be deleted also.
-
       avocadorm.deleteById(EntityA, 4).then(expectAsync((r) {
 
         avocadorm.read(EntityC, filters: [new Filter('entityAId', 4)]).then(expectAsync((entityCs) {
@@ -1639,10 +1633,6 @@ void main() {
     });
 
     test('Normal deletion with a m2m foreign key', () {
-
-      // onDelete Cascade is set on EntityB's entityCs foreign key,
-      //   so the EntityC objects that are joined to the deleted EntityB
-      //   through the junction table should be deleted also.
 
       avocadorm.deleteById(EntityB, 2).then(expectAsync((r) {
 
