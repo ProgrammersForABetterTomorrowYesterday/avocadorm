@@ -10,6 +10,3 @@ dev_dependencies:
   magnetfruit_mysql_database_handler: ">=0.1.0 <0.2.0"
   unittest: any
   mock: any
-dependency_overrides:
-  magnetfruit_entity:
-    path: ../entity/
