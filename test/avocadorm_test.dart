@@ -59,7 +59,8 @@ void main() {
 
   });
 
-  group('Specifying the entities', () {
+  // Recode the first tests so that an entity is tested for existence, added to the ORM, then tested again.
+  skip_group('Specifying the entities', () {
 
     var avocadorm;
 
@@ -143,30 +144,8 @@ void main() {
       avocadorm.clear();
     });
 
-    test('is unactive if it is missing a database handler and entities', () {
-
-      expect(
-          avocadorm.isActive,
-          isFalse,
-          reason: 'The Avocadorm should not be active if the database handler and entities are missing.');
-
-    });
-
-    test('is unactive if it is missing entities', () {
-
-      avocadorm.setDatabaseHandler(new MockDatabaseHandler());
-
-      expect(
-          avocadorm.isActive,
-          isFalse,
-          reason: 'The Avocadorm should not be active if the database handler is missing.');
-
-    });
-
     test('is unactive if it is missing a database handler', () {
 
-      avocadorm.addEntity(EntityA);
-
       expect(
           avocadorm.isActive,
           isFalse,
@@ -174,10 +153,9 @@ void main() {
 
     });
 
-    test('is active if the database handler and entities are specified', () {
+    test('is active if the database handler is specified', () {
 
       avocadorm.setDatabaseHandler(new MockDatabaseHandler());
-      avocadorm.addEntity(EntityA);
 
       expect(
           avocadorm.isActive,
@@ -254,7 +232,6 @@ void main() {
           () => avocadorm.deleteFromMap(EntityA, {}),
           throwsA(new isInstanceOf<AvocadormException>()),
           reason: 'Deleting an entity from a map should not be possible if the avocadorm is unactive.');
-
 
     });
 
@@ -484,8 +461,7 @@ void main() {
 
     test('throws if the entity was not added', () {
 
-      var entity = new EntityC()
-            ..name = 'Entity C';
+      var entity = new NormalEntity();
 
       expect(
           () => avocadorm.create(entity),
@@ -617,7 +593,7 @@ void main() {
     test('throws if the entity was not added', () {
 
       expect(
-          () => avocadorm.count(EntityC),
+          () => avocadorm.count(NormalEntity),
           throwsA(new isInstanceOf<AvocadormException>()),
           reason: 'A non-existant entity should throw an exception.');
 
@@ -716,7 +692,7 @@ void main() {
     test('throws if the entity was not added', () {
 
       expect(
-          () => avocadorm.read(EntityC),
+          () => avocadorm.read(NormalEntity),
           throwsA(new isInstanceOf<AvocadormException>()),
           reason: 'A non-existant entity should throw an exception.');
 
@@ -957,9 +933,7 @@ void main() {
 
     test('throws if the entity was not added', () {
 
-      var entity = new EntityC()
-            ..entityCId = '2'
-            ..name = 'Entity C';
+      var entity = new NormalEntity();
 
       expect(
           () => avocadorm.update(entity),
@@ -1069,9 +1043,7 @@ void main() {
 
     test('throws if the entity was not added', () {
 
-      var entity = new EntityC()
-            ..entityCId = '2'
-            ..name = 'Entity C';
+      var entity = new NormalEntity();
 
       expect(
           () => avocadorm.save(entity),
@@ -1122,7 +1094,7 @@ void main() {
 
     });
 
-    test('will update the existing foreign key', () {
+    test('will update the existing foreign key2', () {
 
       var entityFk = new EntityB()
             ..entityBId = 2
@@ -1340,7 +1312,7 @@ void main() {
         ..addEntities([EntityA, EntityB, EntityC]);
     });
 
-    test('will create the new foreign keys', () {
+    test('will create the new foreign keys23', () {
 
       var entityFk1 = new EntityC()
             ..entityCId = '10'
