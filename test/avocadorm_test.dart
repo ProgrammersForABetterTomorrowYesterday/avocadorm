@@ -1094,7 +1094,7 @@ void main() {
 
     });
 
-    test('will update the existing foreign key2', () {
+    test('will update the existing foreign key', () {
 
       var entityFk = new EntityB()
             ..entityBId = 2
@@ -1140,28 +1140,19 @@ void main() {
 
         avocadorm.hasId(EntityB, entity.entityBId).then(expectAsync((isFound) {
 
-          expect(
-              isFound,
-              isFalse,
-              reason: 'Foreign key should have been created under its own id, not its parent\'s.');
+          expect(isFound, isFalse, reason: 'Foreign key should have been created under its own id, not its parent\'s.');
 
         }));
 
         avocadorm.hasId(EntityB, entityFk.entityBId).then(expectAsync((isFound) {
 
-          expect(
-              isFound,
-              isTrue,
-              reason: 'Foreign key should have been created under its own id.');
+          expect(isFound, isTrue, reason: 'Foreign key should have been created under its own id.');
 
         }));
 
         avocadorm.readById(EntityA, entity.entityAId).then(expectAsync((entityA) {
 
-          expect(
-              entityA.entityBId,
-              equals(entityFk.entityBId),
-              reason: 'Entity still retains control of its foreign key.');
+          expect(entityA.entityBId, equals(entityFk.entityBId), reason: 'Entity still retains control of its foreign key.');
 
         }));
 
