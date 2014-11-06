@@ -576,23 +576,51 @@ class Avocadorm {
   // Creates an [Entity] in the database.
   Future<Object> _create(Resource resource, Map data) {
     var pkColumn = resource.primaryKeyProperty.columnName,
-        columns = resource.simpleProperties.map((p) => p.columnName).toList(),
-        dbData = this._convertDataToDatabaseData(data, resource);
+        columns = resource.simpleProperties.map((p) => p.columnName).toList();
 
     var pkValue;
 
-    return this._databaseHandler.create(resource.tableName, pkColumn, columns, dbData)
+    return this._saveManyToOneForeignKeys(resource, data)
+      .then((pkMaps) {
+        // Updates the many-to-one foreign keys' primary key value in the parent entity.
+        pkMaps.forEach((pkMap) {
+          data[pkMap['target']] = pkMap['pkValue'];
+        });
+
+        var dbData = this._convertDataToDatabaseData(data, resource);
+
+        return this._databaseHandler.create(resource.tableName, pkColumn, columns, dbData);
+      })
       .then((pk) {
-        pkValue = pk;
-        return this._saveForeignKeys(resource, data);
+        data[pkColumn] = pkValue = pk;
+
+        // Updates the parent entity's primary key value in its one-to-many foreign keys.
+        resource.foreignKeyProperties
+          .where((fk) => fk.isOneToMany)
+          .where((fk) => data[fk.name] != null)
+          .forEach((fk) {
+            var fkResource = this._getResource(fk.type);
+
+            // This requires an entity wrapper in order to determine which many-to-one fk to update, in
+            // the case when multiple fks have the same entity type.
+            data[fk.name].forEach((d) {
+              fkResource.foreignKeyProperties
+                .where((sfk) => sfk.isManyToOne)
+                .where((sfk) => sfk.type == resource.type)
+                .where((sfk) => d[sfk.targetName] != null)
+                .forEach((sfk) {
+                  d[sfk.targetName] = pk;
+                });
+            });
+          });
+
+        return this._saveOneToManyForeignKeys(resource, data);
       })
       .then((r) {
-        dbData = this._convertDataToDatabaseData(data, resource);
-        dbData[pkColumn] = pkValue;
-        return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData);
+        return this._saveManyToManyForeignKeys(resource, data);
       })
       .then((r) => pkValue);
-}
+  }
 
   // Counts [Entity]s in the database.
   Future<int> _count(Resource resource, {List<Filter> filters}) {
@@ -611,19 +639,48 @@ class Avocadorm {
   // Updates an [Entity] in the database.
   Future<Object> _update(Resource resource, Map data) {
     var pkColumn = resource.primaryKeyProperty.columnName,
-        columns = resource.simpleProperties.map((p) => p.columnName).toList(),
-        dbData = this._convertDataToDatabaseData(data, resource);
+        columns = resource.simpleProperties.map((p) => p.columnName).toList();
 
     var pkValue;
 
-    return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData)
+    return this._saveManyToOneForeignKeys(resource, data)
+      .then((pkMaps) {
+        // Updates the many-to-one foreign keys' primary key value in the parent entity.
+        pkMaps.forEach((pkMap) {
+          data[pkMap['target']] = pkMap['pkValue'];
+        });
+
+        var dbData = this._convertDataToDatabaseData(data, resource);
+
+        return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData);
+      })
       .then((pk) {
-        pkValue = pk;
-        return this._saveForeignKeys(resource, data);
+        data[pkColumn] = pkValue = pk;
+
+        // Updates the parent entity's primary key value in its one-to-many foreign keys.
+        resource.foreignKeyProperties
+          .where((fk) => fk.isOneToMany)
+          .where((fk) => data[fk.name] != null)
+          .forEach((fk) {
+            var fkResource = this._getResource(fk.type);
+
+            // This requires an entity wrapper in order to determine which many-to-one fk to update, in
+            // the case when multiple fks have the same entity type.
+            data[fk.name].forEach((d) {
+              fkResource.foreignKeyProperties
+                .where((sfk) => sfk.isManyToOne)
+                .where((sfk) => sfk.type == resource.type)
+                .where((sfk) => d[sfk.targetName] != null)
+                .forEach((sfk) {
+                  d[sfk.targetName] = pk;
+                });
+            });
+          });
+
+        return this._saveOneToManyForeignKeys(resource, data);
       })
       .then((r) {
-        dbData =  this._convertDataToDatabaseData(data, resource);
-        return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData);
+        return this._saveManyToManyForeignKeys(resource, data);
       })
       .then((r) => pkValue);
   }
@@ -811,6 +868,127 @@ class Avocadorm {
 
         futures.add(future);
     });
+
+    return Future.wait(futures);
+  }
+
+  // Saves the many-to-one foreign keys of the specified data.
+  Future _saveManyToOneForeignKeys(Resource resource, Map data) {
+    var futures = [];
+
+    resource.foreignKeyProperties
+      .where((fk) => fk.isManyToOne)
+      .where((fk) => fk.recursiveSave)
+      .where((fk) => data[fk.name] != null)
+      .forEach((fk) {
+        var fkResource = this._getResource(fk.type),
+            fkPk = fkResource.primaryKeyProperty,
+            fkData = data[fk.name];
+
+        // Makes sure the parent entity has the foreign key's id up-to-date.
+        data[fk.targetName] = fkData[fk.targetName];
+
+        var future = this._count(fkResource, filters: [new Filter(fkPk.columnName, fkData[fkPk.name])])
+          .then((count) {
+            if (count == 0) {
+              return this._create(fkResource, fkData);
+            } else {
+              return this._update(fkResource, fkData);
+            }
+          })
+          .then((pk) => {'target': fk.targetName, 'pkValue': pk});
+
+        futures.add(future);
+      });
+
+    return Future.wait(futures);
+  }
+
+  // Saves the one-to-many foreign keys of the specified data.
+  Future _saveOneToManyForeignKeys(Resource resource, Map data) {
+    var futures = [];
+
+    resource.foreignKeyProperties
+      .where((fk) => fk.isOneToMany)
+      .where((fk) => fk.recursiveSave)
+      .where((fk) => data[fk.name] != null)
+      .forEach((fk) {
+        var fkResource = this._getResource(fk.type),
+            fkPk = fkResource.primaryKeyProperty,
+            fkData = data[fk.name];
+
+        fkData.forEach((e) {
+          // Makes sure all the foreign keys have their target id correct.
+          e[fk.targetName] = data[resource.primaryKeyProperty.name];
+
+          var future = this._count(fkResource, filters: [new Filter(fkPk.columnName, e[fkPk.name])])
+            .then((count) {
+              if (count == 0) {
+                return this._create(fkResource, e);
+              } else {
+                return this._update(fkResource, e);
+              }
+            });
+
+          futures.add(future);
+        });
+
+      });
+
+    return Future.wait(futures);
+  }
+
+  // Saves the many-to-many foreign keys of the specified data.
+  Future _saveManyToManyForeignKeys(Resource resource, Map data) {
+    var futures = [];
+
+    resource.foreignKeyProperties
+      .where((fk) => fk.isManyToMany)
+      .where((fk) => fk.recursiveSave)
+      .where((fk) => data[fk.name] != null)
+      .forEach((fk) {
+        var fkResource = this._getResource(fk.type),
+            fkPk = fkResource.primaryKeyProperty,
+            fkData = data[fk.name];
+
+        fkData.forEach((e) {
+          // Adds a row in the junction table associated with the current fk pk, and its parent pk.
+
+          var fkPkValue;
+
+          var future = this._count(fkResource, filters: [new Filter(fkPk.columnName, e[fkPk.name])])
+            .then((count) {
+              if (count == 0) {
+                return this._create(fkResource, e);
+              } else {
+                return this._update(fkResource, e);
+              }
+            })
+            .then((pkValue) {
+              fkPkValue = pkValue;
+
+              var filters = [
+                  new Filter(fk.targetColumnName, data[resource.primaryKeyProperty.name]),
+                  new Filter(fk.otherColumnName, fkPkValue)
+              ];
+
+              return this._databaseHandler.count(fk.junctionTableName, filters);
+            }).then((count) {
+              if (count == 0) {
+                // Adds the row in the junction table.
+                var map = {};
+                map[fk.targetColumnName] = data[resource.primaryKeyProperty.name];
+                map[fk.otherColumnName] = fkPkValue;
+
+                return this._databaseHandler.create(fk.junctionTableName, fk.targetColumnName, [fk.otherColumnName], map);
+              }
+
+              return new Future.value(null);
+            });
+
+          futures.add(future);
+        });
+      });
 
     return Future.wait(futures);
   }
