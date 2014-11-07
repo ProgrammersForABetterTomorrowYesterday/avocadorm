@@ -152,7 +152,7 @@ class ResourceHandler {
       targetName = '${name}Id';
     }
 
-    return new ForeignKeyProperty.ManyToOne(name, type, targetName, column.recursiveSave, column.recursiveDelete);
+    return new ManyToOneForeignKeyProperty(name, type, targetName, column.recursiveSave, column.recursiveDelete);
   }
 
   // Converts a one-to-many foreign key property to a [ForeignKeyProperty] instance.
@@ -182,7 +182,7 @@ class ResourceHandler {
       targetName = '${MirrorSystem.getName(reflectType(subType).simpleName)}Id';
     }
 
-    return new ForeignKeyProperty.OneToMany(name, subType, targetName, column.recursiveSave, column.recursiveDelete);
+    return new OneToManyForeignKeyProperty(name, subType, targetName, column.recursiveSave, column.recursiveDelete);
   }
 
   // Converts a many-to-many foreign key property to a [ForeignKeyProperty] instance.
@@ -198,7 +198,7 @@ class ResourceHandler {
       throw new ResourceException('Many-to-many foreign keys must be a list of type Entity.');
     }
 
-    return new ForeignKeyProperty.ManyToMany(name, subType, column.junctionTableName, column.targetColumnName, column.otherColumnName, column.recursiveSave, column.recursiveDelete);
+    return new ManyToManyForeignKeyProperty(name, subType, column.junctionTableName, column.targetColumnName, column.otherColumnName, column.recursiveSave, column.recursiveDelete);
   }
 
 }

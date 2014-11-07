@@ -29,6 +29,7 @@ import 'dart:async';
 import 'dart:mirrors';
 import 'package:magnetfruit_database_handler/database_handler.dart';
 import 'package:magnetfruit_entity/entity.dart';
+import 'src/property/property.dart';
 import 'src/resource/resource_handler.dart';
 
 part 'exceptions/avocadorm_exception.dart';
@@ -596,7 +597,7 @@ class Avocadorm {
 
         // Updates the parent entity's primary key value in its one-to-many foreign keys.
         resource.foreignKeyProperties
-          .where((fk) => fk.isOneToMany)
+          .where((fk) => fk is OneToManyForeignKeyProperty)
           .where((fk) => data[fk.name] != null)
           .forEach((fk) {
             var fkResource = this._getResource(fk.type);
@@ -605,7 +606,7 @@ class Avocadorm {
             // the case when multiple fks have the same entity type.
             data[fk.name].forEach((d) {
               fkResource.foreignKeyProperties
-                .where((sfk) => sfk.isManyToOne)
+                .where((sfk) => sfk is ManyToOneForeignKeyProperty)
                 .where((sfk) => sfk.type == resource.type)
                 .where((sfk) => d[sfk.targetName] != null)
                 .forEach((sfk) {
@@ -659,7 +660,7 @@ class Avocadorm {
 
         // Updates the parent entity's primary key value in its one-to-many foreign keys.
         resource.foreignKeyProperties
-          .where((fk) => fk.isOneToMany)
+          .where((fk) => fk is OneToManyForeignKeyProperty)
           .where((fk) => data[fk.name] != null)
           .forEach((fk) {
             var fkResource = this._getResource(fk.type);
@@ -668,7 +669,7 @@ class Avocadorm {
             // the case when multiple fks have the same entity type.
             data[fk.name].forEach((d) {
               fkResource.foreignKeyProperties
-                .where((sfk) => sfk.isManyToOne)
+                .where((sfk) => sfk is ManyToOneForeignKeyProperty)
                 .where((sfk) => sfk.type == resource.type)
                 .where((sfk) => d[sfk.targetName] != null)
                 .forEach((sfk) {
@@ -728,7 +729,7 @@ class Avocadorm {
       .forEach((p) {
         var future = null;
 
-        if (p.isManyToOne) {
+        if (p is ManyToOneForeignKeyProperty) {
           var targetResource = this._getResource(p.type),
               targetPkColumn = targetResource.primaryKeyProperty.columnName,
               targetPkValue = entityMirror.getField(new Symbol(p.targetName)).reflectee,
@@ -741,7 +742,7 @@ class Avocadorm {
               limit: 1)
             .then((entity) => entity.length > 0 ? entity.first : null);
         }
-        else if (p.isOneToMany) {
+        else if (p is OneToManyForeignKeyProperty) {
           var targetResource = this._getResource(p.type),
               targetColumn = targetResource.simpleProperties.firstWhere((tp) => tp.name == p.targetName).columnName,
               targetValue = entityMirror.getField(new Symbol(resource.primaryKeyProperty.name)).reflectee;
@@ -751,7 +752,7 @@ class Avocadorm {
               filters: [new Filter(targetColumn, targetValue)],
               foreignKeys: _traverseForeignKeyList(foreignKeys, p.name));
         }
-        else if (p.isManyToMany) {
+        else if (p is ManyToManyForeignKeyProperty) {
           var targetPkValue = entityMirror.getField(new Symbol(resource.primaryKeyProperty.name)).reflectee,
               filters = [new Filter(p.targetColumnName, targetPkValue) ];
 
@@ -800,7 +801,7 @@ class Avocadorm {
 
         var future;
 
-        if (fk.isManyToOne) {
+        if (fk is ManyToOneForeignKeyProperty) {
           // Makes sure the parent entity has the foreign key's id up-to-date.
           data[fk.targetName] = fkData[fk.targetName];
 
@@ -813,7 +814,7 @@ class Avocadorm {
               }
             });
         }
-        else if (fk.isOneToMany) {
+        else if (fk is OneToManyForeignKeyProperty) {
           fkData.forEach((e) {
             // Makes sure all the foreign keys have their target id correct.
             e[fk.targetName] = data[resource.primaryKeyProperty.name];
@@ -828,7 +829,7 @@ class Avocadorm {
               });
           });
         }
-        else if (fk.isManyToMany) {
+        else if (fk is ManyToManyForeignKeyProperty) {
           fkData.forEach((e) {
             // Adds a row in the junction table associated with the current fk pk, and its parent pk.
 
@@ -877,7 +878,7 @@ class Avocadorm {
     var futures = [];
 
     resource.foreignKeyProperties
-      .where((fk) => fk.isManyToOne)
+      .where((fk) => fk is ManyToOneForeignKeyProperty)
       .where((fk) => fk.recursiveSave)
       .where((fk) => data[fk.name] != null)
       .forEach((fk) {
@@ -909,7 +910,7 @@ class Avocadorm {
     var futures = [];
 
     resource.foreignKeyProperties
-      .where((fk) => fk.isOneToMany)
+      .where((fk) => fk is OneToManyForeignKeyProperty)
       .where((fk) => fk.recursiveSave)
       .where((fk) => data[fk.name] != null)
       .forEach((fk) {
@@ -943,7 +944,7 @@ class Avocadorm {
     var futures = [];
 
     resource.foreignKeyProperties
-      .where((fk) => fk.isManyToMany)
+      .where((fk) => fk is ManyToManyForeignKeyProperty)
       .where((fk) => fk.recursiveSave)
       .where((fk) => data[fk.name] != null)
       .forEach((fk) {
@@ -1004,7 +1005,7 @@ class Avocadorm {
             fkPk = fkResource.primaryKeyProperty,
             fkData = data[fk.name];
 
-        if (fk.isManyToOne && data[fk.targetName] != null) {
+        if (fk is ManyToOneForeignKeyProperty && data[fk.targetName] != null) {
           var future = new Future.value(fkData)
             .then((entity) {
               return entity != null
@@ -1015,7 +1016,7 @@ class Avocadorm {
 
           futures.add(future);
         }
-        else if (fk.isOneToMany) {
+        else if (fk is OneToManyForeignKeyProperty) {
           var future = new Future.value(fkData)
             .then((entities) {
               if (entities != null) {
@@ -1036,7 +1037,7 @@ class Avocadorm {
 
           futures.add(future);
         }
-        else if (fk.isManyToMany) {
+        else if (fk is ManyToManyForeignKeyProperty) {
           var future = new Future.value(fkData)
             .then((entities) {
               if (entities != null) {
@@ -1112,9 +1113,9 @@ class Avocadorm {
       var fkValue = entityMirror.getField(new Symbol(fk.name)).reflectee;
 
       if (fkValue != null) {
-        if (fk.isManyToOne) {
+        if (fk is ManyToOneForeignKeyProperty) {
           map[fk.name] = this._convertFromEntity(fkValue);
-        } else if (fk.isOneToMany || fk.isManyToMany) {
+        } else if (fk is OneToManyForeignKeyProperty || fk is ManyToManyForeignKeyProperty) {
           map[fk.name] = fkValue.map((v) => this._convertFromEntity(v));
         }
       }
