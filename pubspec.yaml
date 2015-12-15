@@ -6,7 +6,7 @@ homepage: 'http://www.magnetfruit.com/avocadorm/'
 dependencies:
   magnetfruit_entity:
     git:
-      url: https://github.com/magnetfruit/entity.git
+      url: https://github.com/ProgrammersForABetterTomorrowYesterday/entity.git
       ref: development
   magnetfruit_database_handler: ">=0.1.0 <0.2.0"
 dev_dependencies:
