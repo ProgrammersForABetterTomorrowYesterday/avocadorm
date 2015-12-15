@@ -21,12 +21,12 @@ class Resource {
   Property get primaryKeyProperty => this.properties.firstWhere((f) => f is PrimaryKeyProperty, orElse: null);
 
   /// The normal properties contained in the [Entity].
-  List<Property> get simpleProperties => this.properties.where((f) => f is! PrimaryKeyProperty && f is! ForeignKeyProperty).toList();
+  Iterable<Property> get simpleProperties => this.properties.where((f) => f is! PrimaryKeyProperty && f is! ForeignKeyProperty).toList();
 
   /// The primary key property and normal properties contained in the [Entity].
-  List<Property> get simpleAndPrimaryKeyProperties => this.properties.where((f) => f is! ForeignKeyProperty).toList();
+  Iterable<Property> get simpleAndPrimaryKeyProperties => this.properties.where((f) => f is! ForeignKeyProperty).toList();
 
   /// The foreign key properties contained in the [Entity].
-  List<Property> get foreignKeyProperties => this.properties.where((f) => f is ForeignKeyProperty).toList();
+  Iterable<Property> get foreignKeyProperties => this.properties.where((f) => f is ForeignKeyProperty).toList();
 
 }
