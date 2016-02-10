@@ -17,9 +17,7 @@ class ManyToOneForeignKeyProperty extends ForeignKeyProperty {
   ///
   ///     teacher.schoolId == 2
   ///     teacher.school ==> School instance whose primary key value is equal to 2
-  final String targetName;
 
-  const ManyToOneForeignKeyProperty(String name, Type type, this.targetName, bool recursiveSave, bool recursiveDelete)
-    : super(name, type, recursiveSave, recursiveDelete);
-
+  const ManyToOneForeignKeyProperty(String name, Type type, String targetName, bool recursiveSave, bool recursiveDelete)
+    : super(name, type, recursiveSave, recursiveDelete, column: targetName);
 }

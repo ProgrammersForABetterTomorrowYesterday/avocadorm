@@ -1,6 +1,7 @@
 # Don’t commit the following directories created by pub.
 build/
 packages/
+.pub/
 web/
 .idea/
 
@@ -10,6 +11,9 @@ web/
 *.js_
 *.js.deps
 *.js.map
+
+# File create by pub
+.packages
 
 # Include when developing application packages.
 pubspec.lock

@@ -15,10 +15,10 @@ part 'many_to_many_foreign_key_property.dart';
 /// and [PrimaryKeyProperty] and [ForeignKeyProperty] extends from it.
 class Property {
 
-  /// The name of the `Entity` property.
+  /// The name of the instantiated `Entity` object.
   final String name;
 
-  /// The type of the `Entity` property.
+  /// The type of the `Entity` object.
   final Type type;
 
   /// The column name that the `Entity` property is associated with in the database.

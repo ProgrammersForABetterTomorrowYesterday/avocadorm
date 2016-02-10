@@ -12,6 +12,10 @@ class Resource {
   String tableName;
 
   /// The list of properties contained in the `Entity`.
+  ///
+  /// Properties contain references to the column name, but not the table name.
+  /// The table information, and reference to the type of entity the resource
+  /// is tasked with managing.
   List<Property> properties;
 
   /// The primary key property that the `Entity` will be identified with.

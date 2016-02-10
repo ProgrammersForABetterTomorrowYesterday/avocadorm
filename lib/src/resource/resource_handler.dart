@@ -10,7 +10,7 @@ part 'resource.dart';
 
 /// A representation of an [Entity] class and its database table informations.
 ///
-/// This is an internal implementation, and as such, no garantee can be given concerning breaking changes.
+/// This is an internal implementation, and as such, no guarantee can be given concerning breaking changes.
 /// Constructors, properties, and methods should not be available to the user.
 ///
 /// A [Resource] keeps handy all information needed to perform CRUD operations on a specific database table.
@@ -142,13 +142,22 @@ class ResourceHandler {
       throw new ResourceException('Many-to-one foreign keys must be of type Entity.');
     }
 
-    if (!variableMirrors.any((vm) => MirrorSystem.getName(vm.simpleName) == column.targetName)) {
-      //throw new ResourceException('Many-to-one foreign keys must point to a Column in the same class.');
+    var columnName = column.name;
+
+    if (column.name == null || column.name.isEmpty) {
+      columnName = name;
     }
 
+    //TODO:
+    /*
+    if (!variableMirrors.any((vm) => MirrorSystem.getName(vm.simpleName) == column.targetName)) {
+      throw new ResourceException('Many-to-one foreign keys must point to a Column in the same class.');
+    }
+    */
     var targetName = column.targetName;
 
     if (column.targetName == null || column.targetName.isEmpty) {
+      //TODO: Figure out why this is setting the default targetName. Is this just bad data sanitization?
       targetName = '${name}Id';
     }
 
