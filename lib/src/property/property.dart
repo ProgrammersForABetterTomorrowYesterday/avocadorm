@@ -2,9 +2,6 @@ library property;
 
 part 'primary_key_property.dart';
 part 'foreign_key_property.dart';
-part 'many_to_one_foreign_key_property.dart';
-part 'one_to_many_foreign_key_property.dart';
-part 'many_to_many_foreign_key_property.dart';
 
 /// A representation of an `Entity` property and its database column information.
 ///
@@ -15,10 +12,10 @@ part 'many_to_many_foreign_key_property.dart';
 /// and [PrimaryKeyProperty] and [ForeignKeyProperty] extends from it.
 class Property {
 
-  /// The name of the instantiated `Entity` object.
+  /// The name of the `Entity` property.
   final String name;
 
-  /// The type of the `Entity` object.
+  /// The type of the `Entity` property.
   final Type type;
 
   /// The column name that the `Entity` property is associated with in the database.

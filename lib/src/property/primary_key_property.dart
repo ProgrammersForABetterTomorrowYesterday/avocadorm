@@ -15,6 +15,6 @@ class PrimaryKeyProperty extends Property {
    *
    * Creates a primary key [Property] that links an `Entity` property to a database primary key column.
    */
-  const PrimaryKeyProperty(String name, Type type, String columnName) : super(name, type, columnName);
+  PrimaryKeyProperty(String name, Type type, String columnName) : super(name, type, columnName);
 
 }

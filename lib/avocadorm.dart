@@ -26,14 +26,13 @@
 library avocadorm;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:mirrors';
 import 'package:magnetfruit_database_handler/database_handler.dart';
 import 'package:magnetfruit_entity/entity.dart';
+import 'exceptions/avocadorm_exception.dart';
 import 'src/property/property.dart';
-import 'src/resource/resource_handler.dart';
-
-part 'exceptions/avocadorm_exception.dart';
-part 'exceptions/resource_exception.dart';
+import 'src/resource/resource.dart';
 
 /// A link to a database, and a provider of CRUD operations for entities.
 ///
@@ -50,33 +49,17 @@ class Avocadorm {
   /// The database implementation, which handles the queries.
   DatabaseHandler _databaseHandler;
 
-  /// The resource handler, which creates and hands out resources.
-  ResourceHandler _resourceHandler = new ResourceHandler();
-
-  /// Singleton instance of the avocadorm.
-  static final Avocadorm _instance = new Avocadorm._internal();
+  /// The list of [Entity] classes that were added to this ORM.
+  List<Resource> _resources;
 
   /**
-   * Returns the instance of the singleton Avocadorm.
+   * Creates an instance of an ORM.
    *
-   * The Avocadorm must be set with a `DatabaseHandler` and has to be given entities before being usable.
-   */
-  factory Avocadorm() {
-    return _instance;
-  }
-
-  Avocadorm._internal();
-
-  /**
-   * Sets the `DatabaseHandler` that will be used to connect to a database.
-   *
-   * The specified database handler will be used by the Avocadorm to perform CRUD operations on a database.
+   * The Avocadorm is linked to the specified `DatabaseHandler` and has to be given entities before being usable.
    *
    * Throws an [ArgumentError] if the `DatabaseHandler` is null or invalid.
-   *
-   *     avo.setDatabaseHandler(dbHandler);
    */
-  void setDatabaseHandler(DatabaseHandler databaseHandler) {
+  Avocadorm(DatabaseHandler databaseHandler) {
     if (databaseHandler == null) {
       throw new ArgumentError('Database handler must not be null.');
     }
@@ -86,6 +69,7 @@ class Avocadorm {
     }
 
     this._databaseHandler = databaseHandler;
+    this._resources = [];
   }
 
   /**
@@ -100,7 +84,7 @@ class Avocadorm {
    *
    *     avo.addEntitiesInLibrary('entities');
    */
-  void addEntitiesInLibrary(String libraryName) {
+  int addEntitiesInLibrary(String libraryName) {
     if (libraryName == null || libraryName is! String || libraryName.isEmpty) {
       throw new ArgumentError('Library name must be a non-null, non-empty String.');
     }
@@ -113,6 +97,8 @@ class Avocadorm {
       throw new ArgumentError('Library name must designate a valid library.');
     }
 
+    var count = 0;
+
     // Looks at all the classes inside [lib], keeps only those which extends from [Entity],
     // and adds all these to this ORM.
     lib.declarations.values
@@ -121,8 +107,13 @@ class Avocadorm {
       .where((cm) => cm.isSubtypeOf(reflectType(Entity)))
       .map((cm) => cm.reflectedType)
       .forEach((et) {
-        this._addEntityResource(et);
+        if (this._addEntityResource(et)) {
+          // Keeps count of how many [Entity] classes were added.
+          count++;
+        }
       });
+
+    return count;
   }
 
   /**
@@ -136,13 +127,20 @@ class Avocadorm {
    *
    *     avo.addEntities([Employee, Company]);
    */
-  void addEntities(List<Type> entityTypes) {
+  int addEntities(List<Type> entityTypes) {
     _validateEntityTypeList(entityTypes);
+
+    var count = 0;
 
     // Adds all [Entity] classes in [entityTypes] to this ORM.
     entityTypes.forEach((et) {
-        this._addEntityResource(et);
+        if (this._addEntityResource(et)) {
+          // Keeps count of how many [Entity] classes were added.
+          count++;
+        }
       });
+
+    return count;
   }
 
   /**
@@ -157,28 +155,17 @@ class Avocadorm {
    *
    *     avo.addEntity(EmployeeType);
    */
-  void addEntity(Type entityType) {
+  int addEntity(Type entityType) {
     _validateEntityType(entityType);
 
-    this._addEntityResource(entityType);
+    return this._addEntityResource(entityType) ? 1 : 0;
   }
 
   // Converts the [Entity] class to a [Resource], and adds it to the list.
-  void _addEntityResource(Type entityType) {
-    this._resourceHandler.addEntity(entityType);
-  }
+  bool _addEntityResource(Type entityType) {
+    this._resources.add(new Resource(entityType));
 
-  // Returns a value indicating whether the Avocadorm is ready to use.
-  bool get isActive => this._databaseHandler != null;
-
-  /**
-   * Clears the Avocadorm from its database handler and its entities.
-   *
-   * This sets the database handler
-   */
-  void clear() {
-    this._databaseHandler = null;
-    this._resourceHandler = new ResourceHandler();
+    return true;
   }
 
 
@@ -190,15 +177,13 @@ class Avocadorm {
    * key value of the new table row.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the primary key value already exists in the
-   * database.
+   * Throws an [AvocadormException] if the primary key value already exists in the database.
    *
    *     var entity = new Employee('Doe', 'John');
    *     avo.create(entity).then( ... );
    */
   Future<Object> create(Entity entity) {
     _validateEntity(entity);
-    _validateAvocadorm();
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -225,15 +210,13 @@ class Avocadorm {
    * Usage of [create] is prefered in normal scenarios. See the [create] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the primary key value already exists in the
-   * database.
+   * Throws an [AvocadormException] if the primary key value already exists in the database.
    *
    *     avo.createFromMap(httpRequest).then( ... );
    */
   Future<Object> createFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
     _validateDataMap(data);
-    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -259,14 +242,12 @@ class Avocadorm {
    *
    * Throws an [ArgumentError] if the `Entity` class is null or invalid, or if the list of `Filter` contains
    * invalid items.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active.
    *
    *     avo.count(Employee, filters: [new Filter('firstName', 'John')]).then( ... );
    */
   Future<int> count(Type entityType, {List<Filter> filters}) {
     _validateEntityType(entityType);
     _validateFilterList(filters);
-    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         dbFilters = this._convertFiltersToDatabaseFilters(filters, resource);
@@ -281,14 +262,12 @@ class Avocadorm {
    * in the database with the given primary key value.
    *
    * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active.
    *
    *     avo.hasId(Employee, value).then( ... );
    */
   Future<bool> hasId(Type entityType, Object primaryKeyValue) {
     _validateEntityType(entityType);
     _validatePrimaryKeyValue(primaryKeyValue);
-    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
     pkColumn = resource.primaryKeyProperty.columnName,
@@ -305,9 +284,8 @@ class Avocadorm {
    * can also be retrieved by name at the same time, by specifying them in the list [foreignKeys]. Returns a `Future`
    * containing a list of `Entity` instances.
    *
-   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid, or the list of `Filter`
-   * contains invalid items.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active.
+   * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
+   * Throws an [ArgumentError] if the list of `Filter` contains invalid items.
    *
    *     // Retrieves all employees where firstName == 'John'.
    *     avo.read(Employee, filters: [new Filter('firstName', 'John')]).then( ... );
@@ -321,7 +299,6 @@ class Avocadorm {
   Future<List<Entity>> read(Type entityType, {List<Filter> filters, List<String> foreignKeys}) {
     _validateEntityType(entityType);
     _validateFilterList(filters);
-    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         dbFilters = this._convertFiltersToDatabaseFilters(filters, resource);
@@ -337,14 +314,12 @@ class Avocadorm {
    * containing an `Entity` instance, or `null` if no matching `Entity` could be found.
    *
    * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active.
    *
    *     avo.readById(Employee, value, foreignKeys: ['answersTo']).then( ... );
    */
   Future<Entity> readById(Type entityType, Object primaryKeyValue, {List<String> foreignKeys}) {
     _validateEntityType(entityType);
     _validatePrimaryKeyValue(primaryKeyValue);
-    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pkColumn = resource.primaryKeyProperty.columnName,
@@ -361,8 +336,7 @@ class Avocadorm {
    * key value must be found. Returns a `Future` containing the primary key value of the `Entity`.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the table does not contain a matching primary
-   * key value.
+   * Throws an [AvocadormException] if the table does not contain a matching primary key value.
    *
    *     avo.readById(Employee, 2).then((employee) {
    *       employee.isFired = true;
@@ -371,7 +345,6 @@ class Avocadorm {
    */
   Future<Object> update(Entity entity) {
     _validateEntity(entity);
-    _validateAvocadorm();
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -395,15 +368,13 @@ class Avocadorm {
    * Usage of [update] is prefered in normal scenarios. See the [update] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the table does not contain a matching primary
-   * key value.
+   * Throws an [AvocadormException] if the table does not contain a matching primary key value.
    *
    *     avo.updateFromMap(Company, httpRequest).then( ... );
    */
   Future<Object> updateFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
     _validateDataMap(data);
-    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -427,14 +398,12 @@ class Avocadorm {
    * primary key value of the saved `Entity` instance.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active.
    *
    *     var entity = new Employee('Doe', 'Jane);
    *     avo.save(entity).then( ... );
    */
   Future<Object> save(Entity entity) {
     _validateEntity(entity);
-    _validateAvocadorm();
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -459,14 +428,12 @@ class Avocadorm {
    * Usage of [save] is prefered in normal scenarios. See the [save] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` class or [data] are null or invalid.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active.
    *
    *     avo.saveFromMap(Employee, httpRequest).then( ... );
    */
   Future<Object> saveFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
     _validateDataMap(data);
-    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -489,14 +456,12 @@ class Avocadorm {
    * must be found. Returns an empty `Future`.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the primary key value is not found in the
-   * database.
+   * Throws an [AvocadormException] if the primary key value is not found in the database.
    *
    *     avo.delete(myEmployee).then( ... );
    */
   Future delete(Entity entity) {
-    _validateEntity(entity);
-    _validateAvocadorm();
+  _validateEntity(entity);
 
     var entityType = entity.runtimeType,
         resource = this._getResource(entityType),
@@ -520,15 +485,13 @@ class Avocadorm {
    * value must be found. Returns an empty `Future`.
    *
    * Throws an [ArgumentError] if the `Entity` class or [primaryKeyValue] are null or invalid.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the primary key value is not found in the
-   * database.
+   * Throws an [AvocadormException] if the primary key value is not found in the database.
    *
    *     avo.deleteById(Employee, 23).then( ... );
    */
   Future deleteById(Type entityType, Object primaryKeyValue) {
     _validateEntityType(entityType);
     _validatePrimaryKeyValue(primaryKeyValue);
-    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pkColumn = resource.primaryKeyProperty.columnName,
@@ -550,15 +513,13 @@ class Avocadorm {
    * Usage of [delete] is prefered in normal scenarios. See the [delete] method for more information.
    *
    * Throws an [ArgumentError] if the `Entity` instance is null or invalid.
-   * Throws an [AvocadormException] if the [Avocadorm] is not active, or the primary key value is not found in the
-   * database.
+   * Throws an [AvocadormException] if the primary key value is not found in the database.
    *
    *     avo.deleteFromMap(httpRequest).then( ... );
    */
   Future deleteFromMap(Type entityType, Map data) {
     _validateEntityType(entityType);
     _validateDataMap(data);
-    _validateAvocadorm();
 
     var resource = this._getResource(entityType),
         pk = resource.primaryKeyProperty,
@@ -577,51 +538,23 @@ class Avocadorm {
   // Creates an [Entity] in the database.
   Future<Object> _create(Resource resource, Map data) {
     var pkColumn = resource.primaryKeyProperty.columnName,
-        columns = resource.simpleProperties.map((p) => p.columnName).toList();
+        columns = resource.simpleProperties.map((p) => p.columnName).toList(),
+        dbData = this._convertDataToDatabaseData(data, resource);
 
     var pkValue;
 
-    return this._saveManyToOneForeignKeys(resource, data)
-      .then((pkMaps) {
-        // Updates the many-to-one foreign keys' primary key value in the parent entity.
-        pkMaps.forEach((pkMap) {
-          data[pkMap['target']] = pkMap['pkValue'];
-        });
-
-        var dbData = this._convertDataToDatabaseData(data, resource);
-
-        return this._databaseHandler.create(resource.tableName, pkColumn, columns, dbData);
-      })
+    return this._databaseHandler.create(resource.tableName, pkColumn, columns, dbData)
       .then((pk) {
-        data[pkColumn] = pkValue = pk;
-
-        // Updates the parent entity's primary key value in its one-to-many foreign keys.
-        resource.foreignKeyProperties
-          .where((fk) => fk is OneToManyForeignKeyProperty)
-          .where((fk) => data[fk.name] != null)
-          .forEach((fk) {
-            var fkResource = this._getResource(fk.type);
-
-            // This requires an entity wrapper in order to determine which many-to-one fk to update, in
-            // the case when multiple fks have the same entity type.
-            data[fk.name].forEach((d) {
-              fkResource.foreignKeyProperties
-                .where((sfk) => sfk is ManyToOneForeignKeyProperty)
-                .where((sfk) => sfk.type == resource.type)
-                .where((sfk) => d[sfk.targetName] != null)
-                .forEach((sfk) {
-                  d[sfk.targetName] = pk;
-                });
-            });
-          });
-
-        return this._saveOneToManyForeignKeys(resource, data);
+        pkValue = pk;
+        return this._saveForeignKeys(resource, data);
       })
       .then((r) {
-        return this._saveManyToManyForeignKeys(resource, data);
+        dbData = this._convertDataToDatabaseData(data, resource);
+        dbData[pkColumn] = pkValue;
+        return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData);
       })
       .then((r) => pkValue);
-  }
+}
 
   // Counts [Entity]s in the database.
   Future<int> _count(Resource resource, {List<Filter> filters}) {
@@ -640,48 +573,19 @@ class Avocadorm {
   // Updates an [Entity] in the database.
   Future<Object> _update(Resource resource, Map data) {
     var pkColumn = resource.primaryKeyProperty.columnName,
-        columns = resource.simpleProperties.map((p) => p.columnName).toList();
+        columns = resource.simpleProperties.map((p) => p.columnName).toList(),
+        dbData = this._convertDataToDatabaseData(data, resource);
 
     var pkValue;
 
-    return this._saveManyToOneForeignKeys(resource, data)
-      .then((pkMaps) {
-        // Updates the many-to-one foreign keys' primary key value in the parent entity.
-        pkMaps.forEach((pkMap) {
-          data[pkMap['target']] = pkMap['pkValue'];
-        });
-
-        var dbData = this._convertDataToDatabaseData(data, resource);
-
-        return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData);
-      })
+    return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData)
       .then((pk) {
-        data[pkColumn] = pkValue = pk;
-
-        // Updates the parent entity's primary key value in its one-to-many foreign keys.
-        resource.foreignKeyProperties
-          .where((fk) => fk is OneToManyForeignKeyProperty)
-          .where((fk) => data[fk.name] != null)
-          .forEach((fk) {
-            var fkResource = this._getResource(fk.type);
-
-            // This requires an entity wrapper in order to determine which many-to-one fk to update, in
-            // the case when multiple fks have the same entity type.
-            data[fk.name].forEach((d) {
-              fkResource.foreignKeyProperties
-                .where((sfk) => sfk is ManyToOneForeignKeyProperty)
-                .where((sfk) => sfk.type == resource.type)
-                .where((sfk) => d[sfk.targetName] != null)
-                .forEach((sfk) {
-                  d[sfk.targetName] = pk;
-                });
-            });
-          });
-
-        return this._saveOneToManyForeignKeys(resource, data);
+        pkValue = pk;
+        this._saveForeignKeys(resource, data);
       })
       .then((r) {
-        return this._saveManyToManyForeignKeys(resource, data);
+        dbData =  this._convertDataToDatabaseData(data, resource);
+        return this._databaseHandler.update(resource.tableName, pkColumn, columns, dbData);
       })
       .then((r) => pkValue);
   }
@@ -700,7 +604,7 @@ class Avocadorm {
 
   // Finds the [Resource] instance linked to the specified [Entity] class.
   Resource _getResource(Type entityType) {
-    var resource = this._resourceHandler.getResource(entityType);
+    var resource = this._resources.firstWhere((r) => r.type == entityType, orElse: () => null);
 
     if (resource == null) {
       throw new AvocadormException('Resource not found for entity ${entityType}.');
@@ -729,7 +633,7 @@ class Avocadorm {
       .forEach((p) {
         var future = null;
 
-        if (p is ManyToOneForeignKeyProperty) {
+        if (p.isManyToOne) {
           var targetResource = this._getResource(p.type),
               targetPkColumn = targetResource.primaryKeyProperty.columnName,
               targetPkValue = entityMirror.getField(new Symbol(p.targetName)).reflectee,
@@ -742,41 +646,15 @@ class Avocadorm {
               limit: 1)
             .then((entity) => entity.length > 0 ? entity.first : null);
         }
-        else if (p is OneToManyForeignKeyProperty) {
-          var targetResource = this._getResource(p.type),
-              targetColumn = targetResource.simpleProperties.firstWhere((tp) => tp.name == p.targetName).columnName,
-              targetValue = entityMirror.getField(new Symbol(resource.primaryKeyProperty.name)).reflectee;
+        else if (p.isOneToMany) {
+          var targetResource = this._getResource(p.type);
+          var targetColumn = targetResource.simpleProperties.firstWhere((tp) => tp.name == p.targetName).columnName;
+          var targetValue = entityMirror.getField(new Symbol(resource.primaryKeyProperty.name)).reflectee;
 
           future = this._read(
-              targetResource,
+              this._getResource(p.type),
               filters: [new Filter(targetColumn, targetValue)],
               foreignKeys: _traverseForeignKeyList(foreignKeys, p.name));
-        }
-        else if (p is ManyToManyForeignKeyProperty) {
-          var targetPkValue = entityMirror.getField(new Symbol(resource.primaryKeyProperty.name)).reflectee,
-              filters = [new Filter(p.targetColumnName, targetPkValue) ];
-
-          // Calling the database handler directly because the junction table is not a resource.
-          future = this._databaseHandler.read(p.junctionTableName, [p.otherColumnName], filters)
-            .then((entities) {
-              var subFutures = [],
-                  targetResource = this._getResource(p.type),
-                  targetColumn = targetResource.primaryKeyProperty.columnName;
-
-              entities.forEach((e) {
-                var targetValue = e[p.otherColumnName];
-
-                var subFuture = this._read(
-                  targetResource,
-                  filters: [new Filter(targetColumn, targetValue)],
-                  foreignKeys: _traverseForeignKeyList(foreignKeys, p.name))
-                  .then((e2) => e2.first);
-
-                subFutures.add(subFuture);
-              });
-
-              return Future.wait(subFutures);
-            });
         }
 
         if (future != null) {
@@ -792,138 +670,33 @@ class Avocadorm {
     var futures = [];
 
     resource.foreignKeyProperties
-      .where((fk) => fk.recursiveSave)
+      .where((fk) => fk.onUpdateOperation == ReferentialAction.CASCADE)
       .where((fk) => data[fk.name] != null)
       .forEach((fk) {
         var fkResource = this._getResource(fk.type),
             fkPk = fkResource.primaryKeyProperty,
             fkData = data[fk.name];
 
-        var future;
-
-        if (fk is ManyToOneForeignKeyProperty) {
+        if (fk.isManyToOne) {
           // Makes sure the parent entity has the foreign key's id up-to-date.
           data[fk.targetName] = fkData[fk.targetName];
 
-          future = this._count(fkResource, filters: [new Filter(fkPk.columnName, fkData[fkPk.name])])
-            .then((count) {
-              if (count == 0) {
-                return this._create(fkResource, fkData);
-              } else {
-                return this._update(fkResource, fkData);
-              }
-            });
-        }
-        else if (fk is OneToManyForeignKeyProperty) {
-          fkData.forEach((e) {
-            // Makes sure all the foreign keys have their target id correct.
-            e[fk.targetName] = data[resource.primaryKeyProperty.name];
-
-            future = this._count(fkResource, filters: [new Filter(fkPk.columnName, e[fkPk.name])])
-              .then((count) {
-                if (count == 0) {
-                  return this._create(fkResource, e);
-                } else {
-                  return this._update(fkResource, e);
-                }
-              });
-          });
-        }
-        else if (fk is ManyToManyForeignKeyProperty) {
-          fkData.forEach((e) {
-            // Adds a row in the junction table associated with the current fk pk, and its parent pk.
-
-            var fkPkValue;
-
-            future = this._count(fkResource, filters: [new Filter(fkPk.columnName, e[fkPk.name])])
-              .then((count) {
-                if (count == 0) {
-                  return this._create(fkResource, e);
-                } else {
-                  return this._update(fkResource, e);
-                }
-              })
-              .then((pkValue) {
-                fkPkValue = pkValue;
-
-                var filters = [
-                    new Filter(fk.targetColumnName, data[resource.primaryKeyProperty.name]),
-                    new Filter(fk.otherColumnName, fkPkValue)
-                ];
-
-                return this._databaseHandler.count(fk.junctionTableName, filters);
-              }).then((count) {
-                if (count == 0) {
-                  // Adds the row in the junction table.
-                  var map = {};
-                  map[fk.targetColumnName] = data[resource.primaryKeyProperty.name];
-                  map[fk.otherColumnName] = fkPkValue;
-
-                  return this._databaseHandler.create(fk.junctionTableName, fk.targetColumnName, [fk.otherColumnName], map);
-                }
-
-                return new Future.value(null);
-              });
-          });
-        }
-
-        futures.add(future);
-    });
-
-    return Future.wait(futures);
-  }
-
-  // Saves the many-to-one foreign keys of the specified data.
-  Future _saveManyToOneForeignKeys(Resource resource, Map data) {
-    var futures = [];
-
-    resource.foreignKeyProperties
-      .where((fk) => fk is ManyToOneForeignKeyProperty)
-      .where((fk) => fk.recursiveSave)
-      .where((fk) => data[fk.name] != null)
-      .forEach((fk) {
-        var fkResource = this._getResource(fk.type),
-            fkPk = fkResource.primaryKeyProperty,
-            fkData = data[fk.name];
-
-        // Makes sure the parent entity has the foreign key's id up-to-date.
-        data[fk.targetName] = fkData[fk.targetName];
-
-        var future = this._count(fkResource, filters: [new Filter(fkPk.columnName, fkData[fkPk.name])])
-          .then((count) {
+          var future = this._count(fkResource, filters: [new Filter(fkPk.columnName, fkData[fkPk.name])]).then((count) {
             if (count == 0) {
               return this._create(fkResource, fkData);
             } else {
               return this._update(fkResource, fkData);
             }
-          })
-          .then((pk) => {'target': fk.targetName, 'pkValue': pk});
+          });
 
-        futures.add(future);
-      });
+          futures.add(future);
+        }
+        else if (fk.isOneToMany) {
+          fkData.forEach((e) {
+            // Makes sure all the foreign keys have their target id correct.
+            e[fk.targetName] = data[resource.primaryKeyProperty.name];
 
-    return Future.wait(futures);
-  }
-
-  // Saves the one-to-many foreign keys of the specified data.
-  Future _saveOneToManyForeignKeys(Resource resource, Map data) {
-    var futures = [];
-
-    resource.foreignKeyProperties
-      .where((fk) => fk is OneToManyForeignKeyProperty)
-      .where((fk) => fk.recursiveSave)
-      .where((fk) => data[fk.name] != null)
-      .forEach((fk) {
-        var fkResource = this._getResource(fk.type),
-            fkPk = fkResource.primaryKeyProperty,
-            fkData = data[fk.name];
-
-        fkData.forEach((e) {
-          // Makes sure all the foreign keys have their target id correct.
-          e[fk.targetName] = data[resource.primaryKeyProperty.name];
-
-          var future = this._count(fkResource, filters: [new Filter(fkPk.columnName, e[fkPk.name])])
-            .then((count) {
+            var future = this._count(fkResource, filters: [new Filter(fkPk.columnName, e[fkPk.name])]).then((count) {
               if (count == 0) {
                 return this._create(fkResource, e);
               } else {
@@ -931,64 +704,9 @@ class Avocadorm {
               }
             });
 
-          futures.add(future);
-        });
-
-      });
-
-    return Future.wait(futures);
-  }
-
-  // Saves the many-to-many foreign keys of the specified data.
-  Future _saveManyToManyForeignKeys(Resource resource, Map data) {
-    var futures = [];
-
-    resource.foreignKeyProperties
-      .where((fk) => fk is ManyToManyForeignKeyProperty)
-      .where((fk) => fk.recursiveSave)
-      .where((fk) => data[fk.name] != null)
-      .forEach((fk) {
-        var fkResource = this._getResource(fk.type),
-            fkPk = fkResource.primaryKeyProperty,
-            fkData = data[fk.name];
-
-        fkData.forEach((e) {
-          // Adds a row in the junction table associated with the current fk pk, and its parent pk.
-
-          var fkPkValue;
-
-          var future = this._count(fkResource, filters: [new Filter(fkPk.columnName, e[fkPk.name])])
-            .then((count) {
-              if (count == 0) {
-                return this._create(fkResource, e);
-              } else {
-                return this._update(fkResource, e);
-              }
-            })
-            .then((pkValue) {
-              fkPkValue = pkValue;
-
-              var filters = [
-                  new Filter(fk.targetColumnName, data[resource.primaryKeyProperty.name]),
-                  new Filter(fk.otherColumnName, fkPkValue)
-              ];
-
-              return this._databaseHandler.count(fk.junctionTableName, filters);
-            }).then((count) {
-              if (count == 0) {
-                // Adds the row in the junction table.
-                var map = {};
-                map[fk.targetColumnName] = data[resource.primaryKeyProperty.name];
-                map[fk.otherColumnName] = fkPkValue;
-
-                return this._databaseHandler.create(fk.junctionTableName, fk.targetColumnName, [fk.otherColumnName], map);
-              }
-
-              return new Future.value(null);
-            });
-
-          futures.add(future);
-        });
+            futures.add(future);
+          });
+        }
       });
 
     return Future.wait(futures);
@@ -999,13 +717,13 @@ class Avocadorm {
     var futures = [];
 
     resource.foreignKeyProperties
-      .where((fk) => fk.recursiveDelete)
+      .where((fk) => fk.onDeleteOperation == ReferentialAction.CASCADE)
       .forEach((fk) {
         var fkResource = this._getResource(fk.type),
             fkPk = fkResource.primaryKeyProperty,
             fkData = data[fk.name];
 
-        if (fk is ManyToOneForeignKeyProperty && data[fk.targetName] != null) {
+        if (fk.isManyToOne && data[fk.targetName] != null) {
           var future = new Future.value(fkData)
             .then((entity) {
               return entity != null
@@ -1016,7 +734,7 @@ class Avocadorm {
 
           futures.add(future);
         }
-        else if (fk is OneToManyForeignKeyProperty) {
+        else if (fk.isOneToMany) {
           var future = new Future.value(fkData)
             .then((entities) {
               if (entities != null) {
@@ -1027,43 +745,6 @@ class Avocadorm {
                     pk = resource.primaryKeyProperty.name;
 
                 return this._read(fkResource, filters: [new Filter(fkTarget, data[pk])]);
-              }
-            })
-            .then((entities) {
-              entities.forEach((entity) {
-                this._delete(fkResource, this._convertFromEntity(entity));
-              });
-            });
-
-          futures.add(future);
-        }
-        else if (fk is ManyToManyForeignKeyProperty) {
-          var future = new Future.value(fkData)
-            .then((entities) {
-              if (entities != null) {
-                return entities;
-              }
-              else {
-                var targetPkValue = data[resource.primaryKeyProperty.name],
-                    filters = [new Filter(fk.targetColumnName, targetPkValue) ];
-
-                // Calling the database handler directly because the junction table is not a resource.
-                return this._databaseHandler.read(fk.junctionTableName, [fk.otherColumnName], filters).then((entities) {
-
-                  var subFutures = [],
-                      otherPk = fkResource.primaryKeyProperty.columnName;
-
-                  entities.forEach((e) {
-                    var targetValue = e[fk.otherColumnName];
-
-                    var subFuture = this._read(fkResource, filters: [new Filter(otherPk, targetValue)])
-                      .then((e2) => e2 != null && e2.length > 0 ? e2.first : null);
-
-                    subFutures.add(subFuture);
-                  });
-
-                  return Future.wait(subFutures).then((entities) => entities.where((e) => e != null));
-                });
               }
             })
             .then((entities) {
@@ -1113,9 +794,9 @@ class Avocadorm {
       var fkValue = entityMirror.getField(new Symbol(fk.name)).reflectee;
 
       if (fkValue != null) {
-        if (fk is ManyToOneForeignKeyProperty) {
+        if (fk.isManyToOne) {
           map[fk.name] = this._convertFromEntity(fkValue);
-        } else if (fk is OneToManyForeignKeyProperty || fk is ManyToManyForeignKeyProperty) {
+        } else if (fk.isOneToMany) {
           map[fk.name] = fkValue.map((v) => this._convertFromEntity(v));
         }
       }
@@ -1160,13 +841,6 @@ class Avocadorm {
     }).where((f) => f != null).toList();
   }
 
-
-  // Validates if the Avocadorm is active.
-  void _validateAvocadorm() {
-    if (!this.isActive) {
-      throw new AvocadormException('The Avocadorm must have a database handler defined.');
-    }
-  }
 
   // Validates an [Entity] argument.
   static void _validateEntity(Entity entity) {
@@ -1255,7 +929,7 @@ class Avocadorm {
       .where((fk) => fk == propertyName || fk.startsWith('${propertyName}.'))
       .map((fk) => fk.substring(propertyName.length))
       .where((fk) => fk.isNotEmpty)
-      .map((fk) => _trimLeft(fk, '.')).toList();
+      .map((fk) => _trimLeft(fk, '.'));
 
     return _distinct(traversedForeignKeys);
   }
