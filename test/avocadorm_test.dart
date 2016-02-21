@@ -3,8 +3,6 @@ library avocadorm_test;
 import 'dart:async';
 import 'dart:math';
 import 'package:magnetfruit_avocadorm/avocadorm.dart';
-import 'package:magnetfruit_avocadorm/exceptions/avocadorm_exception.dart';
-import 'package:magnetfruit_avocadorm/exceptions/resource_exception.dart';
 import 'package:magnetfruit_database_handler/database_handler.dart';
 import 'package:mock/mock.dart';
 import 'package:unittest/unittest.dart';
@@ -15,44 +13,61 @@ part 'mock_database_handler.dart';
 
 void main() {
 
+  tearDown(()  {
+    // Clears the singleton's database handler and entities.
+    new Avocadorm().clear();
+  });
+
   group('Constructing the avocadorm', () {
 
     test('returns the instance', () {
 
       expect(
-          new Avocadorm(new MockDatabaseHandler()),
+          new Avocadorm(),
           isNotNull,
           reason: 'Avocadorm should return a valid instance.');
 
     });
 
-    test('throws if the database handler is null', () {
+  });
+
+  group('Specifying the database handler', () {
+
+    var avocadorm;
+
+    setUp(() {
+      avocadorm = new Avocadorm();
+    });
+
+    test('accepts a valid database handler', () {
 
       expect(
-          () => new Avocadorm(null),
+          () => avocadorm.setDatabaseHandler(new MockDatabaseHandler()),
+          returnsNormally,
+          reason: 'Avocadorm should return a valid instance.');
+
+    });
+
+    test('throws if the database handler is invalid', () {
+
+      expect(
+          () => avocadorm.setDatabaseHandler(null),
           throwsArgumentError,
           reason: 'A null database handler should throw an exception.');
 
     });
 
-    test('throws if the entity type is invalid', () {
-
-      expect(
-          () => new Avocadorm('Invalid Type'),
-          throwsArgumentError,
-          reason: 'A database handler of an invalid type should throw an exception.');
-
-    });
-
   });
 
-  group('Specifying the entities', () {
+  // Recode the first tests so that an entity is tested for existence, added to the ORM, then tested again.
+  skip_group('Specifying the entities', () {
 
     var avocadorm;
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler());
     });
 
     test('adds the entities in the specified library and returns the count', () {
@@ -82,17 +97,12 @@ void main() {
 
     });
 
-    test('throws if the library is null', () {
+    test('throws if the library is invalid', () {
 
       expect(
           () => avocadorm.addEntitiesInLibrary(null),
           throwsArgumentError,
           reason: 'A null library name should throw an exception.');
-
-      expect(
-          () => avocadorm.addEntitiesInLibrary({'type': 'Invalid type'}),
-          throwsArgumentError,
-          reason: 'A library name of an invalid type should throw an exception.');
 
       expect(
           () => avocadorm.addEntitiesInLibrary('Invalid library name'),
@@ -108,16 +118,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null list of entity type should throw an exception.');
 
-      expect(
-          () => avocadorm.addEntities('Invalid type'),
-          throwsArgumentError,
-          reason: 'A list of entity type that is not a list should throw an exception.');
-
-      expect(
-          () => avocadorm.addEntities(['Invalid type']),
-          throwsArgumentError,
-          reason: 'An list of entity type in which an item is of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -127,10 +127,111 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
 
+    });
+
+  });
+
+  group('Validating the avocadorm', () {
+
+    var avocadorm;
+
+    setUp(() {
+      avocadorm = new Avocadorm();
+    });
+
+    tearDown(()  {
+      // Clears the singleton's database handler and entities.
+      avocadorm.clear();
+    });
+
+    test('is unactive if it is missing a database handler', () {
+
       expect(
-          () => avocadorm.addEntity('Invalid type'),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
+          avocadorm.isActive,
+          isFalse,
+          reason: 'The Avocadorm should not be active if the database handler is missing.');
+
+    });
+
+    test('is active if the database handler is specified', () {
+
+      avocadorm.setDatabaseHandler(new MockDatabaseHandler());
+
+      expect(
+          avocadorm.isActive,
+          isTrue,
+          reason: 'The Avocadorm should be active if the database handler is specified.');
+
+    });
+
+    test('denies the operations if unactive', () {
+
+      avocadorm.addEntity(EntityA);
+
+      expect(
+          () => avocadorm.create(new EntityA()),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Creating an entity should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.createFromMap(EntityA, {}),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Creating an entity from a map should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.count(EntityA),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Counting entities should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.hasId(EntityA, 1),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Counting an entity by id should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.read(EntityA),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Reading entities should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.readById(EntityA, 1),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Reading an entity by id should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.update(new EntityA()),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Updating an entity should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.updateFromMap(EntityA, {}),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Updating an entity from a map should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.save(new EntityA()),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Saving an entity should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.saveFromMap(EntityA, {}),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Saving an entity from a map should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.delete(new EntityA()),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Deleting an entity should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.deleteById(EntityA, 1),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Deleting an entity should not be possible if the avocadorm is unactive.');
+
+      expect(
+          () => avocadorm.deleteFromMap(EntityA, {}),
+          throwsA(new isInstanceOf<AvocadormException>()),
+          reason: 'Deleting an entity from a map should not be possible if the avocadorm is unactive.');
 
     });
 
@@ -141,7 +242,8 @@ void main() {
     var avocadorm;
 
     setUp(() {
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler());
     });
 
     test('throws if the entity type does not have a Table metadata', () {
@@ -207,6 +309,24 @@ void main() {
 
     });
 
+    test('throws if a m2m foreign key is not a list', () {
+
+      expect(
+          () => avocadorm.addEntity(FkInvalidM2MListEntity),
+          throwsA(new isInstanceOf<ResourceException>()),
+          reason: 'A m2m foreign key should be a list.');
+
+    });
+
+    test('throws if a m2m foreign key is not a list of an entity type', () {
+
+      expect(
+          () => avocadorm.addEntity(FkInvalidM2MTypeEntity),
+          throwsA(new isInstanceOf<ResourceException>()),
+          reason: 'A m2m foreign key should be a list of entity type.');
+
+    });
+
   });
 
   group('Creating an entity', () {
@@ -215,9 +335,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('ignores the specified primary key value', () {
@@ -319,11 +439,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity should throw an exception.');
 
-      expect(
-          () => avocadorm.create('Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -332,11 +447,6 @@ void main() {
           () => avocadorm.createFromMap(null, {}),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
-
-      expect(
-          () => avocadorm.createFromMap('Invalid Type', {}),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
 
     });
 
@@ -347,17 +457,11 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity map should throw an exception.');
 
-      expect(
-          () => avocadorm.createFromMap(EntityA, 'Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity map of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity was not added', () {
 
-      var entity = new EntityC()
-            ..name = 'Entity C';
+      var entity = new NormalEntity();
 
       expect(
           () => avocadorm.create(entity),
@@ -374,9 +478,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('returns whether a specific entity exists', () {
@@ -461,11 +565,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity should throw an exception.');
 
-      expect(
-          () => avocadorm.count('Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -474,11 +573,6 @@ void main() {
           () => avocadorm.hasId(null, 0),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
-
-      expect(
-          () => avocadorm.hasId('Invalid Type', 0),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
 
     });
 
@@ -499,7 +593,7 @@ void main() {
     test('throws if the entity was not added', () {
 
       expect(
-          () => avocadorm.count(EntityC),
+          () => avocadorm.count(NormalEntity),
           throwsA(new isInstanceOf<AvocadormException>()),
           reason: 'A non-existant entity should throw an exception.');
 
@@ -513,9 +607,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('returns all entities of the specified type', () {
@@ -575,19 +669,9 @@ void main() {
           reason: 'A null entity type should throw an exception.');
 
       expect(
-          () => avocadorm.read('Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
-
-      expect(
           () => avocadorm.readById(null, 1),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
-
-      expect(
-          () => avocadorm.readById('Invalid Type', 1),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
 
     });
 
@@ -608,7 +692,7 @@ void main() {
     test('throws if the entity was not added', () {
 
       expect(
-          () => avocadorm.read(EntityC),
+          () => avocadorm.read(NormalEntity),
           throwsA(new isInstanceOf<AvocadormException>()),
           reason: 'A non-existant entity should throw an exception.');
 
@@ -622,9 +706,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('returns all entities matching the filter', () {
@@ -648,12 +732,12 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB, EntityC]);
     });
 
-    test('returns an entity with the specified foreign key', () {
+    test('returns an entity with the specified many-to-one foreign key', () {
 
       avocadorm.readById(EntityA, 4, foreignKeys: ['entityB']).then(expectAsync((entityA) {
 
@@ -666,6 +750,62 @@ void main() {
             entityA.entityB.name,
             equals('Third EntityB'),
             reason: 'The entityA property \'entityB\' should have the correct name \'Third EntityB\'.');
+
+      }));
+
+    });
+
+    test('returns an entity with the specified one-to-many foreign key', () {
+
+      avocadorm.readById(EntityB, 2, foreignKeys: ['entityAs']).then(expectAsync((entityB) {
+
+        expect(
+            entityB.entityAs,
+            isNotNull,
+            reason: 'The entityB property \'entityAs\' should have been retrieved.');
+
+        expect(
+            entityB.entityAs.length,
+            equals(2),
+            reason: 'The entityB property \'entityAs\' should contain two EntityA objects.');
+
+        expect(
+            entityB.entityAs.elementAt(0).entityAId,
+            equals(2),
+            reason: 'The entityB property \'entityAs\' should contain an EntityA with id \'2\'.');
+
+        expect(
+            entityB.entityAs.elementAt(1).entityAId,
+            equals(5),
+            reason: 'The entityB property \'entityAs\' should contain an EntityA with id \'5\'.');
+
+      }));
+
+    });
+
+    test('returns an entity with the specified many-to-many foreign key', () {
+
+      avocadorm.readById(EntityB, 1, foreignKeys: ['entityCs']).then(expectAsync((entityB) {
+
+        expect(
+            entityB.entityCs,
+            isNotNull,
+            reason: 'The entityB property \'entityCs\' should have been retrieved.');
+
+        expect(
+            entityB.entityCs.length,
+            equals(2),
+            reason: 'The entityB property \'entityCs\' should contain two EntityC objects.');
+
+        expect(
+            entityB.entityCs.elementAt(0).entityCId,
+            equals('1'),
+            reason: 'The entityB property \'entityCs\' should contain an EntityC with id \'1\'.');
+
+        expect(
+            entityB.entityCs.elementAt(1).entityCId,
+            equals('2'),
+            reason: 'The entityB property \'entityCs\' should contain an EntityC with id \'2\'.');
 
       }));
 
@@ -697,9 +837,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('updates the matching entity in the database', () {
@@ -771,11 +911,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity should throw an exception.');
 
-      expect(
-          () => avocadorm.update('Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -784,11 +919,6 @@ void main() {
           () => avocadorm.updateFromMap(null, {}),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
-
-      expect(
-          () => avocadorm.updateFromMap('Invalid Type', {}),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
 
     });
 
@@ -799,18 +929,11 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity map should throw an exception.');
 
-      expect(
-          () => avocadorm.updateFromMap(EntityA, 'Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity map of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity was not added', () {
 
-      var entity = new EntityC()
-            ..entityCId = '2'
-            ..name = 'Entity C';
+      var entity = new NormalEntity();
 
       expect(
           () => avocadorm.update(entity),
@@ -827,9 +950,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('creates the entity when the primary key value is non-existant', () {
@@ -903,8 +1026,6 @@ void main() {
 
       expect(() => avocadorm.save(null), throwsArgumentError, reason: 'A null entity should throw an exception.');
 
-      expect(() => avocadorm.save('Invalid Type'), throwsArgumentError, reason: 'An entity of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -912,24 +1033,17 @@ void main() {
       expect(() => avocadorm.saveFromMap(null, {
       }), throwsArgumentError, reason: 'A null entity type should throw an exception.');
 
-      expect(() => avocadorm.saveFromMap('Invalid Type', {
-      }), throwsArgumentError, reason: 'An entity type of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity map is invalid', () {
 
       expect(() => avocadorm.saveFromMap(EntityA, null), throwsArgumentError, reason: 'A null entity map should throw an exception.');
 
-      expect(() => avocadorm.saveFromMap(EntityA, 'Invalid Type'), throwsArgumentError, reason: 'An entity map of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity was not added', () {
 
-      var entity = new EntityC()
-            ..entityCId = '2'
-            ..name = 'Entity C';
+      var entity = new NormalEntity();
 
       expect(
           () => avocadorm.save(entity),
@@ -946,9 +1060,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('will create the new foreign key', () {
@@ -1026,28 +1140,19 @@ void main() {
 
         avocadorm.hasId(EntityB, entity.entityBId).then(expectAsync((isFound) {
 
-          expect(
-              isFound,
-              isFalse,
-              reason: 'Foreign key should have been created under its own id, not its parent\'s.');
+          expect(isFound, isFalse, reason: 'Foreign key should have been created under its own id, not its parent\'s.');
 
         }));
 
         avocadorm.hasId(EntityB, entityFk.entityBId).then(expectAsync((isFound) {
 
-          expect(
-              isFound,
-              isTrue,
-              reason: 'Foreign key should have been created under its own id.');
+          expect(isFound, isTrue, reason: 'Foreign key should have been created under its own id.');
 
         }));
 
         avocadorm.readById(EntityA, entity.entityAId).then(expectAsync((entityA) {
 
-          expect(
-              entityA.entityBId,
-              equals(entityFk.entityBId),
-              reason: 'Entity still retains control of its foreign key.');
+          expect(entityA.entityBId, equals(entityFk.entityBId), reason: 'Entity still retains control of its foreign key.');
 
         }));
 
@@ -1063,9 +1168,9 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('will create the new foreign keys', () {
@@ -1187,15 +1292,143 @@ void main() {
 
   });
 
+  group('Saving entities with many-to-many foreign keys', () {
+
+    var avocadorm;
+
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB, EntityC]);
+    });
+
+    test('will create the new foreign keys23', () {
+
+      var entityFk1 = new EntityC()
+            ..entityCId = '10'
+            ..name = 'New EntityC1',
+          entityFk2 = new EntityC()
+            ..entityCId = '11'
+            ..name = 'New EntityC2',
+          entity = new EntityB()
+            ..entityBId = 2
+            ..name = 'New EntityB'
+            ..entityCs = [entityFk1, entityFk2];
+
+      avocadorm.hasId(EntityC, entityFk1.entityCId).then(expectAsync((isFound) {
+
+        expect(isFound, isFalse, reason: 'EntityC with primary key value \'10\' should not exist.');
+
+        avocadorm.save(entity).then(expectAsync((id) {
+
+          avocadorm.hasId(EntityC, entityFk1.entityCId).then(expectAsync((isFound) {
+
+            expect(isFound, isTrue, reason: 'EntityC with primary key value 10 should have been created.');
+
+          }));
+
+          avocadorm.hasId(EntityC, entityFk2.entityCId).then(expectAsync((isFound) {
+
+            expect(isFound, isTrue, reason: 'EntityC with primary key value 11 should have been created.');
+
+          }));
+
+        }));
+
+      }));
+
+    });
+
+    test('will update the existing foreign keys', () {
+
+      var entityFk1 = new EntityC()
+            ..entityCId = '1'
+            ..name = 'New EntityC1',
+          entityFk2 = new EntityC()
+            ..entityCId = '2'
+            ..name = 'New EntityC2',
+          entity = new EntityB()
+            ..entityBId = 2
+            ..name = 'New EntityB'
+            ..entityCs = [entityFk1, entityFk2];
+
+      avocadorm.hasId(EntityC, entityFk1.entityCId).then(expectAsync((isFound) {
+
+        expect(isFound, isTrue, reason: 'EntityC with primary key value \'1\' should exist.');
+
+        avocadorm.save(entity).then(expectAsync((id) {
+
+          avocadorm.readById(EntityC, entityFk1.entityCId).then(expectAsync((entityC) {
+
+            expect(entityC, isNotNull, reason: 'First EntityC should not have disappeared after the save.');
+
+            expect(entityC.name, equals(entityFk1.name), reason: 'First EntityC should have been updated with the specified name.');
+
+          }));
+
+          avocadorm.readById(EntityC, entityFk2.entityCId).then(expectAsync((entityC) {
+
+            expect(entityC, isNotNull, reason: 'Second EntityC should not have disappeared after the save.');
+
+            expect(entityC.name, equals(entityFk2.name), reason: 'Second EntityC should have been updated with the specified name.');
+
+          }));
+
+        }));
+
+      }));
+
+    });
+
+    test('will retrieve entities through the junction table', () {
+
+      var entityFk1 = new EntityC()
+            ..entityCId = '10'
+            ..name = 'New EntityC1',
+          entityFk2 = new EntityC()
+            ..entityCId = '11'
+            ..name = 'New EntityC2',
+          entity = new EntityB()
+            ..entityBId = 12
+            ..name = 'New EntityB'
+            ..entityCs = [entityFk1, entityFk2];
+
+      avocadorm.save(entity).then(expectAsync((id) {
+
+        avocadorm.readById(EntityB, id, foreignKeys: ['entityCs']).then(expectAsync((entityB) {
+
+          expect(entityB.entityCs.length, equals(2), reason: 'Saved entityB should have two many-to-many EntityC foreign keys.');
+
+          avocadorm.readById(EntityC, entityB.entityCs.elementAt(0).entityCId, foreignKeys: ['entityBs']).then(expectAsync((entityC) {
+
+            expect(entityC.entityBs.length, equals(1), reason: 'First saved entityC should have one many-to-many EntityB foreign keys.');
+
+          }));
+
+          avocadorm.readById(EntityC, entityB.entityCs.elementAt(1).entityCId, foreignKeys: ['entityBs']).then(expectAsync((entityC) {
+
+            expect(entityC.entityBs.length, equals(1), reason: 'Second saved entityC should have one many-to-many EntityB foreign keys.');
+
+          }));
+
+        }));
+
+      }));
+
+    });
+
+  });
+
   group('Deleting entities', () {
 
     var avocadorm;
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB, EntityC]);
     });
 
     test('removes the entity from the database', () {
@@ -1239,11 +1472,6 @@ void main() {
           throwsArgumentError,
           reason: 'A null entity should throw an exception.');
 
-      expect(
-          () => avocadorm.delete('Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity of an invalid type should throw an exception.');
-
     });
 
     test('throws if the entity type is invalid', () {
@@ -1254,19 +1482,9 @@ void main() {
           reason: 'A null entity type should throw an exception.');
 
       expect(
-          () => avocadorm.deleteFromMap('Invalid Type', {}),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
-
-      expect(
           () => avocadorm.deleteById(null, {}),
           throwsArgumentError,
           reason: 'A null entity type should throw an exception.');
-
-      expect(
-          () => avocadorm.deleteById('Invalid Type', {}),
-          throwsArgumentError,
-          reason: 'An entity type of an invalid type should throw an exception.');
 
     });
 
@@ -1276,11 +1494,6 @@ void main() {
           () => avocadorm.deleteFromMap(EntityA, null),
           throwsArgumentError,
           reason: 'A null entity map should throw an exception.');
-
-      expect(
-          () => avocadorm.deleteFromMap(EntityA, 'Invalid Type'),
-          throwsArgumentError,
-          reason: 'An entity map of an invalid type should throw an exception.');
 
     });
 
@@ -1300,9 +1513,7 @@ void main() {
 
     test('throws if the entity was not added', () {
 
-      var entity = new EntityC()
-            ..entityCId = '2'
-            ..name = 'Entity C';
+      var entity = new NormalEntity();
 
       expect(
           () => avocadorm.delete(entity),
@@ -1319,15 +1530,12 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB, EntityC]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB, EntityC]);
     });
 
     test('Normal deletion with a m2o foreign key', () {
-
-      // onDelete Cascade is set on EntityA's entityB foreign key,
-      //  so the entityB with id 3 should be deleted also.
 
       avocadorm.deleteById(EntityA, 4).then(expectAsync((r) {
 
@@ -1352,15 +1560,12 @@ void main() {
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB, EntityC]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB, EntityC]);
     });
 
     test('Normal deletion with a o2m foreign key', () {
-
-      // onDelete Cascade is set on EntityA's entityCs foreign key,
-      //   so all the entityC with entityAId 4 should be deleted also.
 
       avocadorm.deleteById(EntityA, 4).then(expectAsync((r) {
 
@@ -1379,35 +1584,53 @@ void main() {
 
   });
 
+  group('Deleting entities with many-to-many foreign keys', () {
+
+    var avocadorm;
+
+    setUp(() {
+      setEntities();
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB, EntityC]);
+    });
+
+    test('Normal deletion with a m2m foreign key', () {
+
+      avocadorm.deleteById(EntityB, 2).then(expectAsync((r) {
+
+        avocadorm.hasId(EntityC, '1').then(expectAsync((isFound) {
+
+          expect(
+              isFound,
+              isFalse,
+              reason: 'Many-to-many foreign keys should have been deleted.');
+
+        }));
+
+      }));
+
+    });
+
+  });
+
   group('Filters', () {
 
     var avocadorm;
 
     setUp(() {
       setEntities();
-      avocadorm = new Avocadorm(new MockDatabaseHandler());
-
-      avocadorm.addEntities([EntityA, EntityB]);
+      avocadorm = new Avocadorm()
+        ..setDatabaseHandler(new MockDatabaseHandler())
+        ..addEntities([EntityA, EntityB]);
     });
 
     test('throws if the filter list is invalid', () {
 
       expect(
-          () => avocadorm.count(EntityA, filters: 'Invalid type'),
-          throwsArgumentError,
-          reason: 'A filter list of an invalid type should throw an exception.'
-      );
-
-      expect(
           () => avocadorm.count(EntityA, filters: [null]),
           throwsArgumentError,
           reason: 'A null filter should throw an exception.'
-      );
-
-      expect(
-          () => avocadorm.count(EntityA, filters: ['Invalid type']),
-          throwsArgumentError,
-          reason: 'A filter of an invalid type should throw an exception.'
       );
 
     });

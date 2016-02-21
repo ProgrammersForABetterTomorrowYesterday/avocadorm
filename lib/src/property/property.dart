@@ -2,6 +2,9 @@ library property;
 
 part 'primary_key_property.dart';
 part 'foreign_key_property.dart';
+part 'many_to_one_foreign_key_property.dart';
+part 'one_to_many_foreign_key_property.dart';
+part 'many_to_many_foreign_key_property.dart';
 
 /// A representation of an `Entity` property and its database column information.
 ///
