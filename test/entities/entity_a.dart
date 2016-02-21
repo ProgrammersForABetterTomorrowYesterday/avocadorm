@@ -12,10 +12,10 @@ class EntityA extends Entity {
   @Column('entity_b_id')
   int entityBId;
 
-  @Column.ManyToOneForeignKey('entityBId', onUpdate: ReferentialAction.CASCADE, onDelete: ReferentialAction.CASCADE)
+  @Column.ManyToOneForeignKey('entityBId', recursiveSave: true, recursiveDelete: true)
   EntityB entityB;
 
-  @Column.OneToManyForeignKey('entityAId', onDelete: ReferentialAction.CASCADE)
+  @Column.OneToManyForeignKey('entityAId', recursiveDelete: true)
   List<EntityC> entityCs;
 
 }

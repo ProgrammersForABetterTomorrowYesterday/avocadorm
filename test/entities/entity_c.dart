@@ -15,4 +15,7 @@ class EntityC extends Entity {
   @Column.ManyToOneForeignKey('entityAId')
   EntityA entityA;
 
+  @Column.ManyToManyForeignKey('entity_b_entity_c', 'entity_c_id', 'entity_b_id')
+  List<EntityB> entityBs;
+
 }

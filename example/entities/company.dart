@@ -9,7 +9,7 @@ class Company extends Entity {
   @Column('name')
   String name;
 
-  @Column.OneToManyForeignKey('companyId', onUpdate: ReferentialAction.CASCADE)
+  @Column.OneToManyForeignKey('companyId', recursiveSave: true)
   List<Employee> employees;
 
 }
