@@ -28,7 +28,8 @@ class ForeignKeyProperty extends Property {
   /// Whether to recursively delete this foreign key when the entity is deleted.
   final bool recursiveDelete;
 
-  const ForeignKeyProperty(String name, Type type, this.recursiveSave, this.recursiveDelete)
-    : super(name, type, null);
+  const ForeignKeyProperty(String name, Type type, this.recursiveSave,
+    this.recursiveDelete, {String column: null})
+    : super(name, type, column);
 
 }

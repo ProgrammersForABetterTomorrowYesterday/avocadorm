@@ -142,9 +142,10 @@ class ResourceHandler {
       throw new ResourceException('Many-to-one foreign keys must be of type Entity.');
     }
 
-    if (!variableMirrors.any((vm) => MirrorSystem.getName(vm.simpleName) == column.targetName)) {
-      throw new ResourceException('Many-to-one foreign keys must point to a Column in the same class.');
-    }
+    var columnName = column.name;
+
+    if (column.name == null || column.name.isEmpty) {
+      columnName = name;
 
     var targetName = column.targetName;
 

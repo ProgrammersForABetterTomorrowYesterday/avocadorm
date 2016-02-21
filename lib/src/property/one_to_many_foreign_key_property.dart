@@ -20,9 +20,9 @@ class OneToManyForeignKeyProperty extends ForeignKeyProperty {
   ///
   ///     teacher.teacherId == 3
   ///     teacher.courses ==> List of all Course instances whose teacherId values are equal to 3
-  final String targetName;
 
-  const OneToManyForeignKeyProperty(String name, Type type, this.targetName, bool recursiveSave, bool recursiveDelete)
-    : super(name, type, recursiveSave, recursiveDelete);
+  const OneToManyForeignKeyProperty(String name, Type type, String targetName,
+    bool recursiveSave, bool recursiveDelete)
+    : super(name, type, recursiveSave, recursiveDelete, column: targetName);
 
 }
