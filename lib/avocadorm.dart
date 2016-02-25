@@ -29,6 +29,7 @@ import 'dart:async';
 import 'dart:mirrors';
 import 'package:magnetfruit_database_handler/database_handler.dart';
 import 'package:magnetfruit_entity/entity.dart';
+import 'package:sqljocky/sqljocky.dart' show Blob;
 import 'src/property/property.dart';
 import 'src/resource/resource_handler.dart';
 
@@ -1089,6 +1090,10 @@ class Avocadorm {
     var entityMirror = reflectClass(resource.type).newInstance(new Symbol(''), []);
 
     resource.simpleAndPrimaryKeyProperties.forEach((p) {
+      if (data[p.columnName] is Blob) {
+        data[p.columnName] = data[p.columnName].toString();
+      }
+      
       entityMirror.setField(new Symbol(p.name), data[p.columnName]);
     });
 
